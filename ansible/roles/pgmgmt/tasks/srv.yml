@@ -1,0 +1,19 @@
+---
+- name: Copy files (PG)
+  copy:
+    src: "{{ type }}_worker/{{ item }}"
+    dest: "~{{ os.user }}/{{ item }}"
+    owner: "{{ os.user }}"
+    mode: '0750'
+  with_items:
+    - remote_worker.py
+    - local_worker.py
+    - main_worker.py
+- name: Copy files (PG)
+  template:
+    src: "{{ type }}_worker/{{ item }}.j2"
+    dest: "~{{ os.user }}/{{ item }}"
+    owner: "{{ os.user }}"
+    mode: '0750'
+  with_items:
+    - worker.sh

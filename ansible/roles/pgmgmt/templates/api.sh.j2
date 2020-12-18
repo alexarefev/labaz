@@ -1,0 +1,10 @@
+#!/bin/bash
+export BACKUP_DIR="/mnt/backups"
+export LOCAL_DB_NAME="pgmgmt"
+export LOCAL_DB_USER="pgmgmt"
+export LOCAL_DB_PASSWORD="paaasssworddd"
+
+{% for line in api.ports %}
+export API_PORT="{{ line -}}"
+python3 api.py  >> "{{ log }}/api.log" 2>&1 &
+{% endfor %}

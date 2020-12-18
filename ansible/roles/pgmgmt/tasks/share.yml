@@ -1,0 +1,84 @@
+---
+- name: Create shared folder (PG)
+  file:
+    path: "{{ share }}/pg"
+    state: directory
+    owner: "{{ os.user }}"
+    group: "{{ os.user}}"
+    mode: '0755'
+  when: ansible_host != mgmt_host and type == "pg"
+- name: Create shared folder (MySQL)
+  file:
+    path: "{{ share }}/mysql"
+    state: directory
+    owner: "{{ os.user }}"
+    group: "{{ os.user }}"
+    mode: '0755'
+  when: ansible_host != mgmt_host and type == "mysql"
+- name: Create shared folders (Mgmt)
+  file:
+    path: "{{ share }}/{{ item }}"
+    state: directory
+    owner: "{{ os.user }}"
+    group: "{{ os.user}}"
+    mode: '0755'
+  loop:
+    - pg
+    - mysql
+  when: ansible_host == mgmt_host
+- name: NFS configuration (Mgmt)
+  lineinfile:
+    path: /etc/exports 
+    line: "{{ share }}/pg    {{ item }}/32(rw,sync,no_subtree_check)" 
+  loop: "{{ ip_addrs_pg | json_query('results[*].ansible_facts.ip_addr1') }}"
+  when: ansible_host == mgmt_host and fs.type == "nfs"
+- name: NFS configuration (Mgmt)
+  lineinfile:
+    path: /etc/exports 
+    line: "{{ share }}/mysql    {{ item }}/32(rw,sync,no_subtree_check)" 
+  loop: "{{ ip_addrs_mysql | json_query('results[*].ansible_facts.ip_addr2') }}"
+  when: ansible_host == mgmt_host and fs.type == "nfs"
+- name: NFS export directories
+  shell: "exportfs -r"
+  when: ansible_host == mgmt_host and fs.type == "nfs"
+- name: Define the mgmt IP (Mgmt)
+  set_fact:
+    pg_mgmt_ip: "{{ hostvars[mgmt_host]['ansible_default_ipv4']['address'] }}"
+  run_once: true
+- name: Add NFS share into fstab and mount (PG)
+  mount:
+    path: "{{ share }}/pg"
+    src: "{{ pg_mgmt_ip }}:{{ share }}/pg"
+    fstype: nfs 
+    opts: async,exec,_netdev
+    state: mounted
+  when: ansible_host != mgmt_host and fs.type == "nfs" and type == "pg" 
+- name: Add NFS share into fstab and mount (MySQL)
+  mount:
+    path: "{{ share }}/mysql"
+    src: "{{ pg_mgmt_ip }}:{{ share }}/mysql"
+    fstype: nfs 
+    opts: async,exec,_netdev
+    state: mounted
+  when: ansible_host != mgmt_host and fs.type == "nfs" and type == "mysql"
+- name: Restart NFS (Mgmt)
+  systemd:
+    name: nfs-server
+    state: restarted
+    enabled: yes
+  when: ansible_host == mgmt_host and fs.type == "nfs"
+- name: GlusterFS (All)
+  block:
+    - name: Load kernel module
+      modprobe:
+        name: fuse
+        state: present
+    - name: Add GlusterFS share into fstab and mount
+      mount:
+        path: "{{ share }}"
+        src: "{{ fs.srv }}:{{ fs.vol }}"
+        fstype: glusterfs 
+        opts: defaults,_netdev
+        state: mounted
+  when: fs.type == "gluster" 
+

@@ -1,0 +1,59 @@
+---
+- name: Add MariaDB key (Debian MySQL)
+  apt_key:
+    url: https://mariadb.org/mariadb_release_signing_key.asc
+    state: present
+- name: Add repository
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/apt/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - sources.list
+    - mariadb.list
+- name: Install list of packages (Debian MySQL)
+  apt:
+    name: [ 'apt-transport-https', 'net-tools', 'gnupg', 'software-properties-common', 'python3-pip', 'python3-pymysql' ]
+    state: latest
+    update_cache: yes
+    force_apt_get: yes
+- name: Set security limits (Debian MySQL)
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: "{{ item }}" 
+    create: yes
+  loop:
+    - "* soft nofile 10485760"
+    - "* hard nofile 10485760"
+    - "root soft nofile 10485760"
+    - "root hard nofile 10485760"
+- name: Install MariaDB server (Debian MySQL)
+  apt:
+    name: "mariadb-server"
+    update_cache: yes
+    force_apt_get: yes
+- name: Change MySQL config (Debian MySQL)
+  lineinfile:
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regexp: "bind-address"
+    line: "bind-address   = 0.0.0.0"
+  notify:
+    - restart mysql
+- name: NFS installation (Debian MySQL)
+  apt:
+    name: ['nfs-common']
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+  when: fs.type == "nfs"
+- name: Create user (Debian MySQL)
+  mysql_user:
+    name: "{{ mysql.user }}"
+    password: "{{ mysql.pass }}"
+    priv: '*.*:ALL,GRANT'
+    state: present
+    login_user: root
+    login_password: ''
+    login_unix_socket: /run/mysqld/mysqld.sock

@@ -1,0 +1,56 @@
+---
+- name: Copy files (Mgmt)
+  copy:
+    src: "{{ item.value }}"
+    dest: "~{{ item.name }}/{{ item.value }}"
+    owner: "{{ item.name }}"
+    mode: '0750'
+  with_items:
+    - { name: "postgres", value: "sql/pgmgmt.sql" }
+    - { name: "{{ os.user }}", value: "api/api.py" }
+- name: Copy files (PG)
+  template:
+    src: "{{ item }}.j2"
+    dest: "~{{ os.user }}/{{ item }}"
+    owner: "{{ os.user }}"
+    mode: '0750'
+  with_items:
+    - api.sh
+- name: Create database for management (Mgmt)
+  postgresql_db:
+    name: "{{ pgmgmt.db }}"
+  become: yes
+  become_user: postgres
+- name: Create role (Mgmt)
+  postgresql_user:
+    db: "{{ pgmgmt.db }}"
+    name: "{{ pgmgmt.user }}"
+    password: "{{ pgmgmt.pass }}"
+    priv: "ALL"
+    expires: infinity
+  become: yes
+  become_user: postgres
+- name: Restore database from dump (Mgmt)
+  postgresql_db:
+    name: "{{ pgmgmt.db }}"
+    state: restore
+    target: "~postgres/pgmgmt.sql"
+  become: yes
+  become_user: postgres
+- name: Change owner for pgmgmt (Mgmt)
+  postgresql_owner:
+    db: "{{ pgmgmt.db }}"
+    new_owner: "{{ pgmgmt.user }}"
+  become: yes
+  become_user: postgres
+- name: Create a queue (Mgmt)
+  postgresql_query:
+    db: pgmgmt
+    query: "SELECT * FROM pgq.create_queue('{{ item }}')"
+  loop:
+    - "pg"
+    - "mysql"
+  become: yes
+  become_user: postgres
+- name: Create htpasswd
+  shell: "htpasswd -b -c /etc/nginx/.htpasswd {{ api.user }} {{ api.pass }}"

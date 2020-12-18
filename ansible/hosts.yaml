@@ -1,0 +1,21 @@
+all:
+  children:
+    db:
+      children:
+        pg:
+          hosts:
+            pg2:
+            pg3:
+          vars:
+            type: pg
+        mysql:
+          hosts:
+            mysql3:
+            mysql4:
+          vars:
+            type: mysql
+        pgm:
+          hosts:
+            pg-mgmt:
+          vars:
+            type: mgmt

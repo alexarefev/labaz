@@ -1,0 +1,71 @@
+---
+- name: Save IP into variable (PG)
+  set_fact:
+    ip_addr1: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+  with_inventory_hostnames:
+    - "pg"
+  register: ip_addrs_pg
+  run_once: true
+- name: Show IPs (PG)
+  debug:
+    msg: "{{ item }}/32" 
+  loop: "{{ ip_addrs_pg | json_query('results[*].ansible_facts.ip_addr1') }}"
+  when: ansible_host == mgmt_host
+- name: Save IP into variable (MySQL)
+  set_fact:
+    ip_addr2: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+  with_inventory_hostnames:
+    - "mysql"
+  register: ip_addrs_mysql
+  run_once: true
+- name: Show IPs (MySQL)
+  debug:
+    msg: "{{ item }}/32" 
+  loop: "{{ ip_addrs_mysql | json_query('results[*].ansible_facts.ip_addr2') }}"
+  when: ansible_host == mgmt_host
+- name: Save IP into variable (PG MySQL)
+  set_fact:
+    ip_addr: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+  with_inventory_hostnames:
+    - "db"
+  register: ip_addrs
+  run_once: true
+- name: Show IPs (PG MySQL)
+  debug:
+    msg: "{{ item }}/32" 
+  loop: "{{ ip_addrs | json_query('results[*].ansible_facts.ip_addr') }}"
+  when: ansible_host == mgmt_host
+- name: Change pg_hba.conf (Mgmt)
+  postgresql_pg_hba:
+    dest: "/etc/postgresql/{{ pg.ver }}/main/pg_hba.conf"
+    contype: host
+    users: "{{ pgmgmt.user }}"
+    source: "{{ item }}/32"
+    databases: "{{ pgmgmt.db }}"
+    method: md5
+    create: true
+  loop: "{{ ip_addrs | json_query('results[*].ansible_facts.ip_addr') }}"
+  notify:
+    - restart pg
+  when: ansible_host == mgmt_host
+- name: Set query string (PG, MySQL)
+  set_fact:
+    ins: "INSERT INTO hosts (host_name, host_type) VALUES ('{{ item }}', '{{ hostvars[item][\"type\"] }}') ON CONFLICT DO NOTHING;"
+  with_inventory_hostnames:
+    - "db:!{{ mgmt_host }}"
+  register: inserts
+  run_once: true
+- name: Insert configuration into database (Mgmt)
+  postgresql_query: 
+    db: pgmgmt
+    query: "{{ item }}"
+  loop: "{{ inserts | json_query('results[*].ansible_facts.ins') }}"
+  when: ansible_host == mgmt_host
+  become: yes
+  become_user: postgres
+- name: Create folder for logs
+  file:
+    path: "{{ log }}"
+    state: directory
+    owner: "{{ os.user }}" 
+    group: "{{ os.user }}"

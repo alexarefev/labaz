@@ -1,0 +1,41 @@
+---
+- name: PostgreSQL installation (Mgmt Debian)
+  apt:
+    name: "postgresql-{{ pg.ver }}"
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+  notify:
+    - restart pg
+- name: PostgreSQL listen_address configuration (Mgmt Debian)
+  lineinfile:
+    path: "/etc/postgresql/{{ pg.ver }}/main/postgresql.conf"
+    line: "listen_addresses = '*'" 
+    insertafter: "^#listen_addresses" 
+    backup: true
+  notify:
+    - restart pg
+- name: Addons installation (Mgmt Debian)
+  apt:
+    name: ['postgresql-{{ pg.ver }}-pgq3', 'python3-jmespath', 'python3-bottle', 'nginx', 'apache2-utils']
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+  notify:
+    - restart pgq
+- name: Nginx config (Mgmt Debian)
+  template:
+    src: "{{ item.src }}.j2"
+    dest: "{{ item.dst }}/{{ item.src }}"
+  with_items:
+    - { 'dst': '/etc/nginx/conf.d', 'src': 'backend.conf' }
+    - { 'dst': '/etc/nginx/sites-available', 'src': 'labaz' }
+  notify:
+    - reload nginx
+- name: NFS installation (Mgmt Debian)
+  apt:
+    name: ['nfs-kernel-server', 'portmap' ]
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+  when: fs.type == "nfs"

@@ -1,0 +1,47 @@
+---
+#    - name: Upgrade system (Debian)
+#      apt:
+#        name: "*"
+#        state: latest
+#        force_apt_get: yes
+#        update_cache: yes
+- name: Set sysctl parameters
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value}}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  loop:
+    - { name: 'fs.file-max', value: '1048576' }
+    - { name: 'fs.nr_open', value: '1048576' }
+    - { name: 'net.ipv4.tcp_mem', value: '786432 1697152 1945728' }
+    - { name: 'net.ipv4.tcp_rmem', value: '4096 4096 16777216' }
+    - { name: 'net.ipv4.tcp_wmem', value: '4096 4096 16777216' }
+- name: Packages installation (Debian)
+  apt:
+    name: ['gnupg', 'net-tools', 'python3-psycopg2'] 
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+- name: PostgreSQL key (All)
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+- name: PostgreSQL repository (Debian)
+  template:
+    src: pg.list.j2
+    dest: /etc/apt/sources.list.d/pgdg.list 
+- name: GlusterFS key (PG Debian)
+  apt_key: 
+    url: https://download.gluster.org/pub/gluster/glusterfs/{{ fs.ver }}/rsa.pub
+    state: present
+  when: fs.type == "gluster"
+- name: GlusterFS installation (PG Debian)
+  apt:
+    name: ['glusterfs-client', 'glusterfs-common']
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+  when: fs.type == "gluster"
+

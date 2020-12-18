@@ -2,9 +2,6 @@
 - hosts: db
   become: true
   vars_prompt:
-#    - name: mgmt_key_name
-#      prompt: "Input key name"
-#      private: no
     - name: mgmt_host
       prompt: "Input management host"
       private: no

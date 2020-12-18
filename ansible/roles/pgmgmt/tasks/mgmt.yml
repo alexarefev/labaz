@@ -1,13 +1,13 @@
 ---
 - name: Copy files (Mgmt)
   copy:
-    src: "{{ item.value }}"
-    dest: "~{{ item.name }}/{{ item.value }}"
+    src: "{{ item.src }}"
+    dest: "~{{ item.name }}/{{ item.dst }}"
     owner: "{{ item.name }}"
     mode: '0750'
   with_items:
-    - { name: "postgres", value: "sql/pgmgmt.sql" }
-    - { name: "{{ os.user }}", value: "api/api.py" }
+    - { name: "postgres", src: "sql/pgmgmt.sql", dst: "pgmgmt.sql" }
+    - { name: "{{ os.user }}", src: "api/api.py", dst: "api.py" }
 - name: Copy files (PG)
   template:
     src: "{{ item }}.j2"

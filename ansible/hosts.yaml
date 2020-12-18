@@ -8,14 +8,17 @@ all:
             pg3:
           vars:
             type: pg
+            ansible_python_interpreter: /usr/bin/python3
         mysql:
           hosts:
             mysql3:
             mysql4:
           vars:
             type: mysql
+            ansible_python_interpreter: /usr/bin/python3
         pgm:
           hosts:
             pg-mgmt:
           vars:
             type: mgmt
+            ansible_python_interpreter: /usr/bin/python3

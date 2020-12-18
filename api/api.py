@@ -75,12 +75,14 @@ def deletedb(entity_type):
                 if data:
                     if 'name' in data:
                         db_name = input_validation(data['name'], 50)
+                    if 'pass' in data:
+                        db_secret = input_validation(data['pass'], 50)
                     if 'backup' in data:
                         db_backup = input_validation_bool(data['backup'])
                     else:
                         db_backup = 'false'
                 if db_name:
-                    sql = "SELECT * FROM dbdeletion('%s', '%s');" % (db_name, db_backup)
+                    sql = "SELECT * FROM dbdeletion('%s', '%s', '%s');" % (db_name, db_backup, db_secret)
                     logger.debug(sql)
                     local_db.execute(sql)
                     result = local_db.fetchone()[0].split(',')

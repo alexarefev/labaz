@@ -18,7 +18,7 @@ pgmgmt:
   db: pgmgmt
   ver: 11
 pg:
-  user: pg
+  user: worker
   ver: 12
 os:
   user: worker

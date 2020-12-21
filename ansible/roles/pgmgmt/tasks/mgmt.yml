@@ -37,10 +37,32 @@
     target: "~postgres/pgmgmt.sql"
   become: yes
   become_user: postgres
-- name: Change owner for pgmgmt (Mgmt)
-  postgresql_owner:
+- name: Change privileges in public (Mgmt)
+  postgresql_privs:
     db: "{{ pgmgmt.db }}"
-    new_owner: "{{ pgmgmt.user }}"
+    schema: pgq
+    privs: ALL
+    type: "{{ item }}"
+    objs: ALL_IN_SCHEMA
+    role: "{{ pgmgmt.user }}"
+  with_items:
+    - function
+    - sequence
+    - table
+  become: yes
+  become_user: postgres
+- name: Change privileges in pgq (Mgmt)
+  postgresql_privs:
+    db: "{{ pgmgmt.db }}"
+    schema: public
+    privs: ALL
+    type: "{{ item }}"
+    objs: ALL_IN_SCHEMA
+    role: "{{ pgmgmt.user }}"
+  with_items:
+    - function
+    - sequence
+    - table
   become: yes
   become_user: postgres
 - name: Create a queue (Mgmt)

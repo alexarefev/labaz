@@ -15,14 +15,15 @@
     backup: true
   notify:
     - restart pg
-- name: Copy files (PG)
-  template:
-    src: "pg_hba.conf.j2"
-    dest: "/etc/postgresql/12/main/pg_hba.conf"
-    owner: "postgres"
-    group: "postgres"
-    backup: yes
-    mode: '0640'
+- name: Change pg_hba.conf (Mgmt)
+  postgresql_pg_hba:
+    dest: "/etc/postgresql/{{ pg.ver }}/main/pg_hba.conf"
+    contype: host
+    users: "all"
+    source: "0.0.0.0/0"
+    databases: "all"
+    method: md5
+    create: true
   notify:
     - restart pg
 - name: NFS installation (PG Debian)

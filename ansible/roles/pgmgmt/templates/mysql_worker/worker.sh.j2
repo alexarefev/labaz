@@ -7,4 +7,4 @@ export REMOTE_DB_HOST="{{ mgmt_host }}"
 export LOCAL_DB_USER="{{ mysql.user }}"
 export LOCAL_DB_PASSWORD="{{ mysql.pass }}"
 
-python3 main_worker.py > "{{ log }}/worker.log" 2>&1 &
+python3 main_worker.py > {{ log }}/worker.log 2>&1 &

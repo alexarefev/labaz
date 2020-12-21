@@ -52,7 +52,7 @@ if __name__ == "__main__":
         remote_db = remote_connection.cursor()
         remote_connection.autocommit = True
         logger.info("PostgreSQL Management has been connected")
-        local_connection_string = ("host='127.0.0.1' dbname='%s' user='%s'" % (LOCAL_DB_NAME, LOCAL_DB_USER))
+        local_connection_string = ("dbname='%s' user='%s'" % (LOCAL_DB_NAME, LOCAL_DB_USER))
         local_connection = psycopg2.connect(local_connection_string)
         local_db = local_connection.cursor()
         local_connection.autocommit = True

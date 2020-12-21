@@ -260,7 +260,8 @@ ALTER TABLE ONLY public.hosts
 ALTER TABLE ONLY public.databases
     ADD CONSTRAINT databases_host_id_fkey FOREIGN KEY (host_id) REFERENCES public.hosts(host_id);
 
-ALTER TABLE databases ADD CONSTRAINT host_id_db_name UNIQUE (host_id, db_name);
+ALTER TABLE ONLY public.databases
+    ADD CONSTRAINT host_id_db_name UNIQUE (host_id, db_name);
 --
 -- PostgreSQL database dump complete
 --

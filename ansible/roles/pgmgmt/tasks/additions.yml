@@ -37,7 +37,7 @@
   when: ansible_host == mgmt_host
 - name: Change pg_hba.conf (Mgmt)
   postgresql_pg_hba:
-    dest: "/etc/postgresql/{{ pg.ver }}/main/pg_hba.conf"
+    dest: "/etc/postgresql/{{ pgmgmt.ver }}/main/pg_hba.conf"
     contype: host
     users: "{{ pgmgmt.user }}"
     source: "{{ item }}/32"

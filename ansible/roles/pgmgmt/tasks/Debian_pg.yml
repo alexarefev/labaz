@@ -15,7 +15,7 @@
     backup: true
   notify:
     - restart pg
-- name: Change pg_hba.conf (Mgmt)
+- name: Change pg_hba.conf (PG Debian)
   postgresql_pg_hba:
     dest: "/etc/postgresql/{{ pg.ver }}/main/pg_hba.conf"
     contype: host
@@ -24,6 +24,13 @@
     databases: "all"
     method: md5
     create: true
+  notify:
+    - restart pg
+- name: Tune parameters (PG Debian)
+  blockinfile:
+    block: "{{ pg.conf }}"
+    path: "/etc/postgresql/{{ pg.ver }}/main/conf.d/custom.conf"
+    create: yes
   notify:
     - restart pg
 - name: NFS installation (PG Debian)

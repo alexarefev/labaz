@@ -15,6 +15,13 @@
     backup: true
   notify:
     - restart pg
+- name: Tune parameters (Mgmt Debian)
+  blockinfile:
+    block: "{{ pgmgmt.conf }}"
+    path: "/etc/postgresql/{{ pgmgmt.ver }}/main/conf.d/custom.conf"
+    create: yes
+  notify:
+    - restart pg
 - name: Addons installation (Mgmt Debian)
   apt:
     name: ['postgresql-{{ pgmgmt.ver }}-pgq3', 'python3-jmespath', 'python3-bottle', 'nginx', 'apache2-utils']

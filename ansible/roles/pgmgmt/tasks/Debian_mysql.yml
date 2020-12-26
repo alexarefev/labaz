@@ -37,8 +37,19 @@
 - name: Change MySQL config (Debian MySQL)
   lineinfile:
     path: /etc/mysql/mariadb.conf.d/50-server.cnf
-    regexp: "bind-address"
-    line: "bind-address   = 0.0.0.0"
+    regexp: "{{ item.reg }}"
+    line: "{{ item.line }}"
+    backup: yes
+  with_items:
+    - { reg: "bind-address",  line: "bind-address   = 0.0.0.0" }
+    - { reg: "^#max_connections",  line: "max_connections = 140" }
+  notify:
+    - restart mysql
+- name: Change MySQL config (Debian MySQL)
+  blockinfile:
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
+    block: "{{ mysql.conf }}"
+    insertbefore: "[embedded]"
   notify:
     - restart mysql
 - name: NFS installation (Debian MySQL)

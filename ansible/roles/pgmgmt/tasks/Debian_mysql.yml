@@ -42,7 +42,7 @@
     backup: yes
   with_items:
     - { reg: "bind-address",  line: "bind-address   = 0.0.0.0" }
-    - { reg: "^#max_connections",  line: "max_connections = 140" }
+    - { reg: "max_connections",  line: "max_connections = {{ mysql.conn }}" }
   notify:
     - restart mysql
 - name: Change MySQL config (Debian MySQL)

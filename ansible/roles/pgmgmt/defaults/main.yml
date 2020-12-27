@@ -5,6 +5,7 @@ mysql:
   type: mariadb
   user: mysql
   pass: mmmyyy
+  conn: 100
   conf: |
     innodb_buffer_pool_size = 1024M
     innodb_log_file_size = 256M
@@ -18,18 +19,18 @@ pgmgmt:
   db: pgmgmt
   ver: 11
   conf: |
-    max_connections = 200
+    max_connections = 100
     shared_buffers = 512MB
-    work_mem = 4MB
+    work_mem = 8MB
     maintenance_work_mem = 100MB
     effective_cache_size = 1024MB
 pg:
   user: worker
   ver: 12
   conf: |
-    max_connections = 200
+    max_connections = 100
     shared_buffers = 512MB
-    work_mem = 4MB
+    work_mem = 8MB
     maintenance_work_mem = 100MB
     effective_cache_size = 1024MB
 os:

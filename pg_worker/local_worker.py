@@ -46,13 +46,13 @@ def drop_entity(task_property, local_db, logger):
     except Exception as err:
         logger.critical(str(err))
 
-def backup_entity(entity_name, backup_dir, logger):
+def backup_entity(uname, entity_name, backup_dir, logger):
     '''
     Perform a backup
     '''
     try:
-        backup_command = ("pg_dump -Z 5 -s -d %s -f %s/%s"
-                          % (entity_name, backup_dir, entity_name))
+        backup_command = ("pg_dump -Z 5 -s -d %s -f %s/%s_%s"
+                          % (entity_name, backup_dir, uname, entity_name))
         result = os.system(backup_command)
         logger.debug("%s has been backuped into %s with result %s"
                      % (entity_name, backup_dir, result))

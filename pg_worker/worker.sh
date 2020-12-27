@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 export BACKUP_DIR="/mnt/backups/pg"
 export REMOTE_DB_NAME="pgmgmt"
 export REMOTE_DB_USER="pgmgmt"

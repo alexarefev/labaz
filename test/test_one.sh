@@ -28,7 +28,7 @@ do
 	PASS=$(grep $DB_NAME $RESP | sed 's/.\+"password":\ "\(.\+\)"}/\1/')
 	let i++
 #	echo "DB=${DB_NAME}"
-	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"true\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/pg
+	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"true\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/$TP
 done
 
 let i=6
@@ -38,5 +38,5 @@ do
 	PASS=$(grep $DB_NAME $RESP | sed 's/.\+"password":\ "\(.\+\)"}/\1/')
 	let i++
 #	echo "DB=${DB_NAME}"
-	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"false\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/pg
+	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"false\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/$TP
 done

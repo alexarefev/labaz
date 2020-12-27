@@ -1,4 +1,4 @@
-from bottle import get, post, delete, request, run, Bottle, response
+from bottle import get, post, delete, request, run, Bottle, response, static_file
 import psycopg2
 import os
 import logging
@@ -128,6 +128,24 @@ def listdb(entity_type):
                     json_data.update({"data":json_list})
                     response.status = 200
                     return json_data
+
+        response.status = 404
+
+    except Exception as err:
+        logger.critical(str(err))
+
+@app.get('/apiv1/backup/<entity_type>/<entity>')
+def downloadbackup(entity_type, entity):
+    try:
+        for valid_type in ['pg', 'mysql']:
+            if entity_type == valid_type:
+                backup = "%s/%s" % (BACKUP_DIR, entity_type)
+                is_backup = os.path.exists("%s/%s/%s" % (BACKUP_DIR, entity_type, entity))
+                if is_backup:
+                    logger.debug("Backup %s has been sent" % entity)
+                    response.status = 200
+                    return static_file(entity, root=backup, download=entity)
+
 
         response.status = 404
 

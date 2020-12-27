@@ -13,7 +13,7 @@ def task_processing(task, local_db, remote_db, logger, backup):
         remote_worker.creation_acknowledge(remote_db, task[5], logger)
     elif task[4] == 'delete' and UNAME == task[7]:
         if task[8] == 'backup':
-            result = local_worker.backup_entity(task[5], backup, logger)
+            result = local_worker.backup_entity(UNAME, task[5], backup, logger)
         local_worker.drop_entity(task, local_db, logger)
         remote_worker.deletion_acknowledge(remote_db, task[5], logger)
     else:

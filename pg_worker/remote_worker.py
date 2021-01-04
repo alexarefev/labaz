@@ -7,12 +7,12 @@ def worker_registration(remote_db, logger, *args):
     Register the worker as a consumer in the particular queue
     '''
     try:
-        consumer_name = "%s_%s" % (args[1], args[2])
-        sql = "SELECT * FROM pgq.register_consumer('%s', '%s');" % (args[0], consumer_name)
-        logger.debug("Customer registration string: %s" % sql)
+        consumer_name = "{}_{}".format(args[1], args[2])
+        sql = "SELECT * FROM pgq.register_consumer('{}', '{}');".format(args[0], consumer_name)
+        logger.debug("Customer registration string: {}".format(sql))
         remote_db.execute(sql)
         result = remote_db.fetchone()
-        logger.debug("%s consumer has been registred with code: %s" % (args[1], result))
+        logger.debug("{} consumer has been registred with code: {}".format(args[1], result))
     except Exception as err:
         logger.critical(str(err))
 
@@ -22,21 +22,21 @@ def queue_reading(remote_db, logger, *args):
     '''
     result_list = []
     try:
-        consumer_name = "%s_%s" % (args[1], args[2])
+        consumer_name = "{}_{}".format(args[1], args[2])
         while len(result_list) == 0:
-            sql = "SELECT * FROM pgq.next_batch('%s', '%s');" % (args[0], consumer_name)
+            sql = "SELECT * FROM pgq.next_batch('{}', '{}');".format(args[0], consumer_name)
             remote_db.execute(sql)
             result = remote_db.fetchall()
             batch_set = result[0]
             if batch_set[0] is not None:
-                sql = "SELECT * FROM pgq.get_batch_events(%s);" % str(batch_set[0])
+                sql = "SELECT * FROM pgq.get_batch_events({});".format(batch_set[0])
                 remote_db.execute(sql)
                 batch = remote_db.fetchall()
                 for i in range(0, len(batch)):
-                    logger.debug("server: %s, database: %s, user: %s, action: %s, backup: %s"
-                                 % (batch[i][8], batch[i][5], batch[i][6], batch[i][4],
-                                    batch[i][7]))
-                sql = "SELECT * FROM pgq.finish_batch(%s);" % str(batch_set[0])
+                    logger.debug("server: {}, database: {}, user: {}, action: {}, backup: {}".format(
+                                  batch[i][8], batch[i][5], batch[i][6], batch[i][4],
+                                  batch[i][7]))
+                sql = "SELECT * FROM pgq.finish_batch({});".format(batch_set[0])
                 remote_db.execute(sql)
                 result = remote_db.fetchall()
             else:
@@ -45,28 +45,15 @@ def queue_reading(remote_db, logger, *args):
     except Exception as err:
         logger.critical(str(err))
 
-def creation_acknowledge(remote_db, entity_name, logger):
+def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
     '''
-    Set database status
-    '''
-    try:
-        sql = "UPDATE databases SET db_state=1 WHERE db_name='%s';" % entity_name
-        remote_db.execute(sql)
-        logger.debug("%s status has been updated in management database"
-                     % entity_name)
-        return 0
-    except Exception as err:
-        logger.critical(str(err))
-
-def deletion_acknowledge(remote_db, entity_name, logger):
-    '''
-    Delete record with particular database from databases list
+    Set database status or delete record with particular database from databases list
     '''
     try:
-        sql = "DELETE FROM databases WHERE db_name='%s';" % entity_name
+        sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(entity_name, ack_type, db_type)
         remote_db.execute(sql)
-        logger.debug("%s has been deleted from management database"
-                     % entity_name)
+        result = remote_db.fetchone()[0].split(',')
+        logger.debug("{} {}".format(result[1], entity_name))
         return 0
     except Exception as err:
         logger.critical(str(err))

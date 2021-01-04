@@ -8,6 +8,25 @@ import pymysql
 import local_worker
 import remote_worker
 
+def task_processing(task, local_db, remote_db, logger):
+    if task[4] == 'create' and UNAME == task[8]:
+        result = local_worker.create_entity(task, local_db, logger)
+        if result == 0:
+            remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
+    elif task[4] == 'delete' and UNAME == task[7]:
+        if task[8] == 'backup':
+            result = local_worker.backup_entity(UNAME, task[5], LOCAL_DB_USER, LOCAL_DB_PASSWORD, BACKUP_DIR, logger)
+            if result == 0:
+                local_worker.drop_entity(task, local_db, logger)
+                remote_worker.db_acknowledge(remote_db, task[5], 'delete', QUEUE_NAME, logger)
+    elif task[4] == 'recover' and UNAME == task[7]:
+        result = local_worker.recover_entity(task, local_db, LOCAL_DB_USER, LOCAL_DB_PASSWORD, BACKUP_DIR, logger)
+        if result == 0:
+            remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
+    else:
+        logger.warning('Task for other server or unknown operation')
+
+
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
@@ -21,9 +40,10 @@ if __name__ == "__main__":
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
     BACKUP_DIR = os.environ['BACKUP_DIR']
+    LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
-    logging.basicConfig(level=logging.DEBUG, format=LOGGER_FORMAT)
+    logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
     logger = logging.getLogger(WORKER_NAME)
 
     QUEUE_NAME = "mysql"
@@ -49,18 +69,9 @@ if __name__ == "__main__":
         while True:
             tasks = remote_worker.queue_reading(remote_db, logger, QUEUE_NAME, PREF, UNAME)
             if tasks:
-                logger.debug("Task: %s" % str(tasks))
-                for i in range(0, len(tasks)):
-                    if tasks[i][4] == 'create' and UNAME == tasks[i][8]:
-                        local_worker.create_entity(tasks[i], local_db, logger)
-                        remote_worker.creation_acknowledge(remote_db, tasks[i][5], logger)
-                    elif tasks[i][4] == 'delete' and UNAME == tasks[i][7]:
-                        if tasks[i][8] == 'backup':
-                            result = local_worker.backup_entity(tasks[i][5], LOCAL_DB_USER, LOCAL_DB_PASSWORD, BACKUP_DIR, logger)
-                        local_worker.drop_entity(tasks[i], local_db, logger)
-                        remote_worker.deletion_acknowledge(remote_db, tasks[i][5], logger)
-                    else:
-                        logger.warning('Task for other server or unknown operation')
+                logger.debug("Task: {}".format(tasks))
+                for task in tasks:
+                    task_processing(task, local_db, remote_db, logger)
 
     except Exception as err:
         logger.critical(str(err))

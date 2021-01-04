@@ -1,4 +1,4 @@
-from bottle import get, post, delete, request, run, Bottle, response, static_file
+from bottle import get, post, delete, request, run, Bottle, response, static_file, FileUpload
 import psycopg2
 import os
 import logging
@@ -64,6 +64,48 @@ def createdb(entity_type):
     except Exception as err:
         logger.critical(str(err))
 
+@app.route('/apiv1/<entity_type>/<entity>', method='PATCH')
+def recoverdb(entity_type, entity):
+    try:
+        for valid_type in ['pg', 'mysql']:
+            if entity_type == valid_type:
+                data = request.json
+                logger.debug("JSON: %s" % data)
+                backup_file = ''
+                db_secret = ''
+                db_name = input_validation(entity, 50)
+                if data:
+                    if ('file' in data) and ('pass' in data):
+                        backup_file = input_validation(data['file'], 50)
+                        db_secret = input_validation(data['pass'], 50)
+                        is_backup = os.path.exists("%s/%s/%s" % (BACKUP_DIR, entity_type, backup_file))
+                        logger.debug("Backup_path: %s, exists: %s" % (backup_file, is_backup))
+                        if is_backup:
+                            sql = "SELECT * FROM dbrecover('%s', '%s', '%s');" % (db_name, backup_file, db_secret)
+                            logger.debug(sql)
+                            local_db.execute(sql)
+                            result = local_db.fetchone()[0].split(',')
+                            if result[0] == '0':
+                                response.status = 201
+                                json_data = { "Result": "success", "type": entity_type }
+                                logger.info("JSON: %s" % json_data)
+                                return json_data
+                            else:
+                                json_data = { "Result": "fail", "message": result[1] }
+                                logger.warning("JSON: %s" % json_data)
+                                response.status = 404
+                                return json_data                    
+            else:
+                pass
+    
+        json_data = { "Result": "fail", "message": "Error in request" }
+        logger.warning("JSON: %s" % json_data)
+        response.status = 404
+        return json_data
+
+    except Exception as err:
+        logger.critical(str(err))
+
 @app.delete('/apiv1/<entity_type>')
 def deletedb(entity_type):
     try:
@@ -82,7 +124,7 @@ def deletedb(entity_type):
                     else:
                         db_backup = 'false'
                 if db_name:
-                    sql = "SELECT * FROM dbdeletion('%s', '%s', '%s');" % (db_name, db_backup, db_secret)
+                    sql = "SELECT * FROM dbdeletion('%s', '%s', '%s', '%s');" % (db_name, db_backup, db_secret, entity_type)
                     logger.debug(sql)
                     local_db.execute(sql)
                     result = local_db.fetchone()[0].split(',')
@@ -110,7 +152,7 @@ def deletedb(entity_type):
 @app.get('/apiv1/<entity_type>')
 def listdb(entity_type):
     try:
-        response.add_header("Allow", "GET, POST, DELETE")
+        response.add_header("Allow", "GET, POST, DELETE, PATCH")
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
                 sql = "SELECT * FROM dblist('%s');" % valid_type
@@ -139,15 +181,33 @@ def downloadbackup(entity_type, entity):
     try:
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
-                backup = "%s/%s" % (BACKUP_DIR, entity_type)
-                is_backup = os.path.exists("%s/%s/%s" % (BACKUP_DIR, entity_type, entity))
+                backup_dir = "%s/%s" % (BACKUP_DIR, entity_type)
+                is_backup = os.path.exists("%s/%s" % (backup_dir, entity))
                 if is_backup:
                     logger.debug("Backup %s has been sent" % entity)
                     response.status = 200
-                    return static_file(entity, root=backup, download=entity)
-
+                    return static_file(entity, root=backup_dir, download=entity)
 
         response.status = 404
+
+    except Exception as err:
+        logger.critical(str(err))
+
+@app.put('/apiv1/backup/<entity_type>/<entity>')
+def uploadbackup(entity_type, entity):
+    try:
+        for valid_type in ['pg', 'mysql']:
+            if entity_type == valid_type:
+                backup_path = "%s/%s/%s" % (BACKUP_DIR, entity_type, entity)
+                is_backup = os.path.exists(backup_path)
+                if not is_backup:
+                    backup = FileUpload(request.body, None, filename='')
+                    backup.save(backup_path)
+                    logger.debug("Backup %s has been recived" % entity)
+                    response.status = 200
+                    return "" 
+
+        response.status = 403
 
     except Exception as err:
         logger.critical(str(err))

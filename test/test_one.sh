@@ -40,3 +40,7 @@ do
 #	echo "DB=${DB_NAME}"
 	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"false\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/$TP
 done
+
+
+curl -v -XPUT -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -d @test_dump_pg http://localhost:8080/apiv1/backup/pg/pg1
+

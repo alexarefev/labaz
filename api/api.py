@@ -28,7 +28,7 @@ def createdb(entity_type):
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
                 data = request.json
-                logger.debug("JSON: %s" % data)
+                logger.debug("JSON: {}".format(data))
                 host_name = ''
                 db_name = ''
                 user_name = ''
@@ -39,25 +39,25 @@ def createdb(entity_type):
                         db_name = input_validation(data['name'], 50)
                     if 'user' in data:
                         user_name = input_validation(data['user'], 50)
-                sql = "SELECT * FROM dbcreation('%s', '%s', '%s', '%s');" % (db_name, user_name, host_name, entity_type)
+                sql = "SELECT * FROM dbcreation('{}', '{}', '{}', '{}');".format(db_name, user_name, host_name, entity_type)
                 logger.debug(sql)
                 local_db.execute(sql)
                 result = local_db.fetchone()[0].split(',')
                 if result[0] == '0':
                     response.status = 201
                     json_data = { "Result": "success", "type": entity_type, "host": result[1], "name": result[2], "user": result[3], "password": result[4] }
-                    logger.info("JSON: %s" % json_data)
+                    logger.info("JSON: {}".format(json_data))
                     return json_data
                 else:
                     json_data = { "Result": "fail", "message": result[1] }
-                    logger.warning("JSON: %s" % json_data)
+                    logger.warning("JSON: {}".format(json_data))
                     response.status = 404
                     return json_data                    
             else:
                 pass
     
         json_data = { "Result": "fail", "message": "Error in request" }
-        logger.warning("JSON: %s" % json_data)
+        logger.warning("JSON: {}".format(json_data))
         response.status = 404
         return json_data
 
@@ -70,7 +70,7 @@ def recoverdb(entity_type, entity):
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
                 data = request.json
-                logger.debug("JSON: %s" % data)
+                logger.debug("JSON: {}".format(data))
                 backup_file = ''
                 db_secret = ''
                 db_name = input_validation(entity, 50)
@@ -78,28 +78,28 @@ def recoverdb(entity_type, entity):
                     if ('file' in data) and ('pass' in data):
                         backup_file = input_validation(data['file'], 50)
                         db_secret = input_validation(data['pass'], 50)
-                        is_backup = os.path.exists("%s/%s/%s" % (BACKUP_DIR, entity_type, backup_file))
-                        logger.debug("Backup_path: %s, exists: %s" % (backup_file, is_backup))
+                        is_backup = os.path.exists("{}/{}/{}".format(BACKUP_DIR, entity_type, backup_file))
+                        logger.debug("Backup_path: {}, exists: {}".format(backup_file, is_backup))
                         if is_backup:
-                            sql = "SELECT * FROM dbrecover('%s', '%s', '%s');" % (db_name, backup_file, db_secret)
+                            sql = "SELECT * FROM dbrecover('{}', '{}', '{}');".format(db_name, backup_file, db_secret)
                             logger.debug(sql)
                             local_db.execute(sql)
                             result = local_db.fetchone()[0].split(',')
                             if result[0] == '0':
                                 response.status = 201
                                 json_data = { "Result": "success", "type": entity_type }
-                                logger.info("JSON: %s" % json_data)
+                                logger.info("JSON: {}".format(json_data))
                                 return json_data
                             else:
                                 json_data = { "Result": "fail", "message": result[1] }
-                                logger.warning("JSON: %s" % json_data)
+                                logger.warning("JSON: {}".format(json_data))
                                 response.status = 404
                                 return json_data                    
             else:
                 pass
     
         json_data = { "Result": "fail", "message": "Error in request" }
-        logger.warning("JSON: %s" % json_data)
+        logger.warning("JSON: {}".format(json_data))
         response.status = 404
         return json_data
 
@@ -124,25 +124,25 @@ def deletedb(entity_type):
                     else:
                         db_backup = 'false'
                 if db_name:
-                    sql = "SELECT * FROM dbdeletion('%s', '%s', '%s', '%s');" % (db_name, db_backup, db_secret, entity_type)
+                    sql = "SELECT * FROM dbdeletion('{}', '{}', '{}', '{}');".format(db_name, db_backup, db_secret, entity_type)
                     logger.debug(sql)
                     local_db.execute(sql)
                     result = local_db.fetchone()[0].split(',')
                     if result[0] == '0':
                         response.status = 204
                         json_data = { "Result": "success", "type": entity_type }
-                        logger.info("JSON: %s" % json_data)
+                        logger.info("JSON: {}".format(json_data))
                         return json_data
                     else:
                         json_data = { "Result": "fail", "message": result[1] }
-                        logger.warning("JSON: %s" % json_data)
+                        logger.warning("JSON: {}".format(json_data))
                         response.status = 404
                         return json_data                    
             else:
                 pass
     
         json_data = { "Result": "fail", "message": "Error in request" }
-        logger.warning("JSON: %s" % json_data)
+        logger.warning("JSON: {}".format(json_data))
         response.status = 404
         return json_data
 
@@ -155,16 +155,42 @@ def listdb(entity_type):
         response.add_header("Allow", "GET, POST, DELETE, PATCH")
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
-                sql = "SELECT * FROM dblist('%s');" % valid_type
+                sql = "SELECT * FROM dblist('{}');".format(valid_type)
                 logger.debug(sql)
                 local_db.execute(sql)
                 results = local_db.fetchall()
                 if results:
                     json_data = { "Result": "success", "type": entity_type }
-                    logger.info("JSON: %s" % json_data)
+                    logger.info("JSON: {}".format(json_data))
                     json_list =[]
                     for result in results:
                         json_str = { "host": result[2], "name": result[0], "user": result[1] }
+                        logger.debug(json_str)
+                        json_list.append(json_str)
+                    json_data.update({"data":json_list})
+                    response.status = 200
+                    return json_data
+
+        response.status = 404
+
+    except Exception as err:
+        logger.critical(str(err))
+
+@app.get('/apiv1/server/<entity_type>') 
+def listhost(entity_type):
+    try:
+        for valid_type in ['pg', 'mysql']:
+            if entity_type == valid_type:
+                sql = "SELECT * FROM hostlist('{}');".format(valid_type)
+                logger.debug(sql)
+                local_db.execute(sql)
+                results = local_db.fetchall()
+                if results:
+                    json_data = { "Result": "success", "type": entity_type }
+                    logger.info("JSON: {}".format(json_data))
+                    json_list =[]
+                    for result in results:
+                        json_str = { "host": result[0], "active": result[1] }
                         logger.debug(json_str)
                         json_list.append(json_str)
                     json_data.update({"data":json_list})
@@ -181,10 +207,10 @@ def downloadbackup(entity_type, entity):
     try:
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
-                backup_dir = "%s/%s" % (BACKUP_DIR, entity_type)
-                is_backup = os.path.exists("%s/%s" % (backup_dir, entity))
+                backup_dir = "{}/{}".format(BACKUP_DIR, entity_type)
+                is_backup = os.path.exists("{}/{}".format(backup_dir, entity))
                 if is_backup:
-                    logger.debug("Backup %s has been sent" % entity)
+                    logger.debug("Backup {} has been sent".format(entity))
                     response.status = 200
                     return static_file(entity, root=backup_dir, download=entity)
 
@@ -198,12 +224,12 @@ def uploadbackup(entity_type, entity):
     try:
         for valid_type in ['pg', 'mysql']:
             if entity_type == valid_type:
-                backup_path = "%s/%s/%s" % (BACKUP_DIR, entity_type, entity)
+                backup_path = "{}/{}/{}".format(BACKUP_DIR, entity_type, entity)
                 is_backup = os.path.exists(backup_path)
                 if not is_backup:
                     backup = FileUpload(request.body, None, filename='')
                     backup.save(backup_path)
-                    logger.debug("Backup %s has been recived" % entity)
+                    logger.debug("Backup {} has been recived".format(entity))
                     response.status = 200
                     return "" 
 
@@ -228,8 +254,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=LOGGER_FORMAT)
     logger = logging.getLogger(WORKER_NAME + API_PORT)
     
-    logger.info("MY NAME IS %s" % UNAME)
-    logger.info("BACKUP_DIR IS %s" % BACKUP_DIR)
+    logger.info("MY NAME IS {}".format(UNAME))
+    logger.info("BACKUP_DIR IS {}".format(BACKUP_DIR))
     
     try:
         local_connection = psycopg2.connect(dbname=LOCAL_DB_NAME,

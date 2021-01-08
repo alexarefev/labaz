@@ -22,7 +22,6 @@ CREATE SCHEMA public;
 
 ALTER SCHEMA public OWNER TO postgres;
 
-
 --
 -- Name: pgq; Type: EXTENSION; Schema: -; Owner: 
 --
@@ -230,6 +229,19 @@ $$;
 
 
 ALTER FUNCTION public.dbrecover(database_name character varying, backup_file character varying, user_pass character varying, db_type character varying) OWNER TO pgmgmt;
+
+--
+-- Name: hostlist(character varying); Type: FUNCTION; Schema: public; Owner: pgmgmt
+--
+
+CREATE FUNCTION public.hostlist(db_type character varying) RETURNS TABLE(host_name character varying, active integer)
+    LANGUAGE sql
+    AS $$
+    SELECT t1.host_name, CASE WHEN t2.co_id IS NOT NULL THEN 1 ELSE 0 END AS active FROM hosts t1 LEFT JOIN pgq.consumer t2 ON 'worker_'||t1.host_name=t2.co_name WHERE t1.host_type=db_type;
+$$;
+
+
+ALTER FUNCTION public.hostlist(db_type character varying) OWNER TO pgmgmt;
 
 SET default_tablespace = '';
 

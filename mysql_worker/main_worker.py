@@ -17,14 +17,19 @@ def task_processing(task, local_db, remote_db, logger):
         if task[8] == 'backup':
             result = local_worker.backup_entity(UNAME, task[5], LOCAL_DB_USER, LOCAL_DB_PASSWORD, BACKUP_DIR, logger)
             if result == 0:
-                local_worker.drop_entity(task, local_db, logger)
-                remote_worker.db_acknowledge(remote_db, task[5], 'delete', QUEUE_NAME, logger)
+                pass
+            else:
+                logger.error("Backup error {}".format(result))
+                return 1
+        local_worker.drop_entity(task, local_db, logger)
+        remote_worker.db_acknowledge(remote_db, task[5], 'delete', QUEUE_NAME, logger)
     elif task[4] == 'recover' and UNAME == task[7]:
         result = local_worker.recover_entity(task, local_db, LOCAL_DB_USER, LOCAL_DB_PASSWORD, BACKUP_DIR, logger)
         if result == 0:
             remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
     else:
         logger.warning('Task for other server or unknown operation')
+    return 0
 
 
 if __name__ == "__main__":

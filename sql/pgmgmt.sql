@@ -71,10 +71,10 @@ BEGIN
     END IF;
     CASE ack_type
     WHEN 'create' THEN
-        UPDATE databases SET db_state='1' WHERE db_name=database_name AND db_host=host;
+        UPDATE databases SET db_state='1' WHERE db_name=database_name AND host_id=host;
         RETURN '0, Database status has been updated';
     WHEN 'delete' THEN      
- DELETE FROM databases WHERE db_name='%s' AND db_host=host;
+        DELETE FROM databases WHERE db_name=database_name AND host_id=host;
         RETURN '0, Database status has been deleted from list';
     ELSE 
         RETURN '2, Unknown operation';
@@ -102,7 +102,7 @@ DECLARE
     type_name varchar;
     srv_name varchar;
 BEGIN
-    SELECT count(t1.db_id) INTO db_chk FROM databases t1, hosts t2 WHERE t1.db_name=db AND t2.host_id=t1.host_id AND t2.host_type=db_type;
+    SELECT count(t1.db_id) INTO db_chk FROM databases t1, hosts t2 WHERE t1.db_name=database_name AND t2.host_id=t1.host_id AND t2.host_type=db_type;
     IF db_chk = 0 THEN
         SELECT host_type INTO type_name FROM hosts WHERE host_name=host;
         IF type_name <> db_type THEN
@@ -162,7 +162,7 @@ BEGIN
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN
         RAISE NOTICE 'Updating database status';
-        UPDATE databases SET db_state='-1' WHERE db_name=database_name;
+        UPDATE databases SET db_state='1' WHERE db_name=database_name AND host_id=host;
         SELECT host_name INTO name FROM hosts WHERE host_id=host;
         IF backup = true THEN
             RAISE NOTICE 'The database backup and deletion %', database_name;
@@ -216,7 +216,7 @@ BEGIN
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN
         RAISE NOTICE 'Updating database status';
-        UPDATE databases SET db_state='-1' WHERE db_name=database_name;
+        UPDATE databases SET db_state='-1' WHERE db_name=database_name and host_id=host;
         SELECT host_name INTO name FROM hosts WHERE host_id=host;
         RAISE NOTICE 'The database recovery %', database_name;
         PERFORM * FROM pgq.insert_event(type_name, 'recover', database_name, user_name, name, backup_file, '');

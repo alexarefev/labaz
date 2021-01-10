@@ -9,7 +9,7 @@ def worker_registration(remote_db, logger, *args):
     try:
         consumer_name = "{}_{}".format(args[1], args[2])
         sql = "SELECT * FROM pgq.register_consumer('{}', '{}');".format(args[0], consumer_name)
-        logger.debug("Customer registration string: {}".format(sql)
+        logger.debug("Customer registration string: {}".format(sql))
         remote_db.execute(sql)
         result = remote_db.fetchone()
         logger.debug("{} consumer has been registred with code: {}".format(args[1], result))
@@ -53,7 +53,7 @@ def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
         sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(entity_name, ack_type, db_type)
         remote_db.execute(sql)
         result = remote_db.fetchone()[0].split(',')
-        logger.debug("{} {}".format(result[1], entity_name))
+        logger.debug("{} {}".format(entity_name, result[1]))
         return 0
     except Exception as err:
         logger.critical(str(err))

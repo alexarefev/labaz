@@ -81,7 +81,7 @@ def recoverdb(entity_type, entity):
                         is_backup = os.path.exists("{}/{}/{}".format(BACKUP_DIR, entity_type, backup_file))
                         logger.debug("Backup_path: {}, exists: {}".format(backup_file, is_backup))
                         if is_backup:
-                            sql = "SELECT * FROM dbrecover('{}', '{}', '{}');".format(db_name, backup_file, db_secret)
+                            sql = "SELECT * FROM dbrecover('{}', '{}', '{}', '{}');".format(db_name, backup_file, db_secret, entity_type)
                             logger.debug(sql)
                             local_db.execute(sql)
                             result = local_db.fetchone()[0].split(',')
@@ -249,9 +249,10 @@ if __name__ == "__main__":
     
     BACKUP_DIR = os.environ['BACKUP_DIR']
     API_PORT = os.environ['API_PORT']
+    LOG_LEVEL = os.environ['LOG_LEVEL']
     
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
-    logging.basicConfig(level=logging.DEBUG, format=LOGGER_FORMAT)
+    logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
     logger = logging.getLogger(WORKER_NAME + API_PORT)
     
     logger.info("MY NAME IS {}".format(UNAME))

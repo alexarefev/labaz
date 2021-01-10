@@ -53,7 +53,7 @@ def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
         sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(entity_name, ack_type, db_type)
         remote_db.execute(sql)
         result = remote_db.fetchone()[0].split(',')
-        logger.debug("{} {}".format(result[1], entity_name))
+        logger.debug("{} {}".format(entity_name, result[1]))
         return 0
     except Exception as err:
         logger.critical(str(err))

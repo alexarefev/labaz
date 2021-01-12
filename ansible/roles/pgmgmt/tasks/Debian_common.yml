@@ -1,10 +1,10 @@
 ---
-#    - name: Upgrade system (Debian)
-#      apt:
-#        name: "*"
-#        state: latest
-#        force_apt_get: yes
-#        update_cache: yes
+#- name: Upgrade system (Debian)
+#  apt:
+#    name: "*"
+#    state: latest
+#    force_apt_get: yes
+#    update_cache: yes
 - name: Set sysctl parameters
   sysctl:
     name: "{{ item.name }}"

@@ -6,5 +6,6 @@ export REMOTE_DB_PASSWORD="{{ pgmgmt.pass }}"
 export REMOTE_DB_HOST="{{ mgmt_host }}"
 export LOCAL_DB_NAME="postgres"
 export LOCAL_DB_USER="{{ pg.user }}"
+export LOG_LEVEL="DEBUG"
 
 python3 main_worker.py > {{ log }}/worker.log 2>&1 &

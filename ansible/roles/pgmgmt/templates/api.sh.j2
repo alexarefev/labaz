@@ -3,6 +3,7 @@ export BACKUP_DIR="{{ share }}"
 export LOCAL_DB_NAME="pgmgmt"
 export LOCAL_DB_USER="pgmgmt"
 export LOCAL_DB_PASSWORD="paaasssworddd"
+export LOG_LEVEL="DEBUG"
 
 {% for line in api.ports %}
 export API_PORT="{{ line -}}"

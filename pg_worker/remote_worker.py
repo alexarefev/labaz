@@ -45,7 +45,7 @@ def queue_reading(remote_db, logger, *args):
     except Exception as err:
         logger.critical(str(err))
 
-def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
+async def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
     '''
     Set database status or delete record with particular database from databases list
     '''

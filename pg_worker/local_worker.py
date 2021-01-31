@@ -2,6 +2,7 @@
 Locale server interaction
 '''
 import os
+import asyncio
 
 def create_entity(task_property, local_db, logger):
     '''
@@ -42,30 +43,32 @@ def drop_entity(task_property, local_db, logger):
     except Exception as err:
         logger.critical(str(err))
 
-def backup_entity(uname, entity_name, backup_dir, logger):
+async def backup_entity(uname, entity_name, backup_dir, logger):
     '''
     Perform a backup
     '''
     try:
         backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}".format(
                            entity_name, backup_dir, uname, entity_name))
-        result = os.system(backup_command)
+        proc = await asyncio.create_subprocess_shell(backup_command)
+        result = proc.returncode
         logger.debug("{} has been backuped into {} with result {}".format(entity_name, backup_dir, result))
-        return result
+        return proc
     except Exception as err:
         logger.critical(str(err))
 
-def recover_entity(task_property, local_db, backup_dir, logger):
+async def recover_entity(task_property, local_db, backup_dir, logger):
     '''
     Recover from a backup
     '''
     try:
         recovery_command = ("gunzip < {}/{} | psql {}".format(backup_dir, task_property[8], task_property[5]))
-        result = os.system(recovery_command)
+        proc = await asyncio.create_subprocess_shell(recovery_command)
+        result = proc.returncode
         logger.debug("{} has been recovered with result {}".format(task_property[5], result))
         sql = 'GRANT ALL ON DATABASE "{}" TO "{}"'.format(task_property[5], task_property[6])
         local_db.execute(sql)
         logger.debug("Access to {} database has been granted".format(task_property[5]))
-        return 0
+        return proc
     except Exception as err:
         logger.critical(str(err))

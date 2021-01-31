@@ -4,31 +4,32 @@ Main module
 import os
 import logging
 import psycopg2
+import asyncio
 import local_worker
 import remote_worker
 
-def task_processing(task, local_db, remote_db, logger, backup):
+async def task_processing(task, local_db, remote_db, logger, backup):
     if task[4] == 'create' and UNAME == task[8]:
         result = local_worker.create_entity(task, local_db, logger)
         if result == 0:
-            remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
+            await remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
     elif task[4] == 'delete' and UNAME == task[7]:
         if task[8] == 'backup':
-            result = local_worker.backup_entity(UNAME, task[5], backup, logger)
-            if result == 0:
+            proc = await local_worker.backup_entity(UNAME, task[5], backup, logger)
+            print('Return code', proc.returncode)
+            if proc.returncode is None:
                 pass
             else:
                 logger.error("Backup error {}".format(result))
-                return 1
         local_worker.drop_entity(task, local_db, logger)
-        remote_worker.db_acknowledge(remote_db, task[5], 'delete', QUEUE_NAME, logger)
+        await remote_worker.db_acknowledge(remote_db, task[5], 'delete', QUEUE_NAME, logger)
     elif task[4] == 'recover' and UNAME == task[7]:
-        result = local_worker.recover_entity(task, local_db, BACKUP_DIR, logger)
-        if result == 0:
-            remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
+        proc = await local_worker.recover_entity(task, local_db, BACKUP_DIR, logger)
+        print('Return code', proc.returncode)
+        if proc.returncode is None:
+            await remote_worker.db_acknowledge(remote_db, task[5], 'create', QUEUE_NAME, logger)
     else:
         logger.warning('Task for other server or unknown operation')
-    return 0
 
 if __name__ == "__main__":
 
@@ -75,8 +76,9 @@ if __name__ == "__main__":
             tasks = remote_worker.queue_reading(remote_db, logger, QUEUE_NAME, PREF, UNAME)
             if tasks:
                 logger.debug("Task: {}".format(tasks))
-                for task in tasks:
-                    task_processing(task, local_db, remote_db, logger, BACKUP_DIR)
+                coroutines = asyncio.gather(*[task_processing(task, local_db, remote_db, logger, BACKUP_DIR) for task in tasks])
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(coroutines)
 
     except Exception as err:
         logger.critical(str(err))

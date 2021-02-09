@@ -126,6 +126,9 @@ BEGIN
             SELECT host_id, host_name INTO id, srv_name FROM hosts WHERE host_type=db_type AND host_id IN (SELECT host_id FROM hosts WHERE host_type=db_type ORDER BY RANDOM() LIMIT 1);
         ELSE
             SELECT host_id, host_name INTO id, srv_name FROM hosts WHERE host_name=host;
+	    IF COALESCE(id,0) = 0 THEN
+		RETURN '3, Invalid server';
+	    END IF;
         END IF;
         IF database_name = '' THEN
             SELECT gen_random_uuid() INTO db;

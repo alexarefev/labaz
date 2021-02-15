@@ -7,7 +7,7 @@ DECLARE
     host varchar;
     db_type varchar;
 
-    database_id_chk varchar;
+    database_id_chk integer;
     user_name_chk varchar;
     host_chk varchar;
     db_type_chk varchar;

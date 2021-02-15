@@ -7,7 +7,9 @@ DECLARE
     host varchar;
     db_type varchar;
 
-    database_id_chk varchar;
+    database_id_chk integer;
+    database_name_chk varchar;
+    result varchar;
     user_name_chk varchar;
     host_chk varchar;
     db_type_chk varchar;
@@ -28,11 +30,12 @@ BEGIN
     SELECT '', 'unit_test_user', 'unit_test_host', 'test_type1' INTO database_name, user_name, host, db_type;
     RAISE NOTICE 'TEST: Without db_name';
     RAISE NOTICE 'VALUES: %, %, %, %', database_name, user_name, host, db_type;
-    PERFORM * FROM dbcreation(database_name, user_name, host, db_type);
+    SELECT * FROM dbcreation(database_name, user_name, host, db_type) INTO result;
+    SELECT regexp_replace(result, '.,\w+,(.+),.+,.', '\1' ) INTO database_name_chk;
     SELECT t1.db_id INTO database_id_chk
            FROM databases t1, hosts t2 WHERE
            t1.host_id = t2.host_id AND t2.host_name = host AND
-           t2.host_type = db_type;
+           t2.host_type = db_type AND t1.db_name = database_name_chk;
     IF NOT FOUND THEN
         RAISE NOTICE 'Good INSERT, %', database_id_chk;
         res = 0;

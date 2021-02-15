@@ -7,11 +7,12 @@ DECLARE
     host varchar;
     db_type varchar;
 
-    database_id_chk varchar;
+    database_id_chk integer;
     user_name_chk varchar;
     host_chk varchar;
     db_type_chk varchar;
     db_st_chk integer;
+    result varchar;
     res integer;
 BEGIN
     RAISE NOTICE 'Initialization';
@@ -28,17 +29,18 @@ BEGIN
     SELECT 'unit_test_db', 'unit_test_user', '', 'test_type1' INTO database_name, user_name, host, db_type;
     RAISE NOTICE 'TEST: Without host';
     RAISE NOTICE 'VALUES: %, %, %, %', database_name, user_name, host, db_type;
-    PERFORM * FROM dbcreation(database_name, user_name, host, db_type);
+    SELECT * FROM dbcreation(database_name, user_name, host, db_type) INTO result;
+    SELECT regexp_replace(result, '.,(.+),unit_test_db,.+', '\1') INTO host_chk;
     SELECT t1.db_id INTO database_id_chk
            FROM databases t1, hosts t2 WHERE
-           t1.host_id = t2.host_id AND t2.host_name = host AND
+           t1.host_id = t2.host_id AND t2.host_name = host_chk AND
            t2.host_type = db_type AND t1.db_name = database_name;
     IF NOT FOUND THEN
-        RAISE NOTICE 'Good INSERT, %', database_id_chk;
-        res = 0;
-    ELSE
         RAISE NOTICE 'Wrong INSERT, %', database_id_chk;
         res = 1;
+    ELSE
+        RAISE NOTICE 'Good INSERT, %', database_id_chk;
+        res = 0;
     END IF;
     SELECT t1.db_state INTO db_st_chk
            FROM databases t1, hosts t2 WHERE

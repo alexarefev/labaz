@@ -22,7 +22,7 @@ def input_validation_bool(input_str):
     else:
         return 'false'
 
-@app.post('/apiv1/<entity_type>')
+@app.post('/api/v1/<entity_type>')
 def createdb(entity_type):
     try:
         for valid_type in ['pg', 'mysql']:
@@ -64,7 +64,7 @@ def createdb(entity_type):
     except Exception as err:
         logger.critical(str(err))
 
-@app.route('/apiv1/<entity_type>/<entity>', method='PATCH')
+@app.route('/api/v1/<entity_type>/<entity>', method='PATCH')
 def recoverdb(entity_type, entity):
     try:
         for valid_type in ['pg', 'mysql']:
@@ -106,7 +106,7 @@ def recoverdb(entity_type, entity):
     except Exception as err:
         logger.critical(str(err))
 
-@app.delete('/apiv1/<entity_type>')
+@app.delete('/api/v1/<entity_type>')
 def deletedb(entity_type):
     try:
         for valid_type in ['pg', 'mysql']:
@@ -149,7 +149,7 @@ def deletedb(entity_type):
     except Exception as err:
         logger.critical(str(err))
 
-@app.get('/apiv1/<entity_type>')
+@app.get('/api/v1/<entity_type>')
 def listdb(entity_type):
     try:
         response.add_header("Allow", "GET, POST, DELETE, PATCH")
@@ -176,7 +176,7 @@ def listdb(entity_type):
     except Exception as err:
         logger.critical(str(err))
 
-@app.get('/apiv1/server/<entity_type>') 
+@app.get('/api/v1/server/<entity_type>') 
 def listhost(entity_type):
     try:
         for valid_type in ['pg', 'mysql']:
@@ -202,7 +202,7 @@ def listhost(entity_type):
     except Exception as err:
         logger.critical(str(err))
 
-@app.get('/apiv1/backup/<entity_type>/<entity>')
+@app.get('/api/v1/backup/<entity_type>/<entity>')
 def downloadbackup(entity_type, entity):
     try:
         for valid_type in ['pg', 'mysql']:
@@ -219,7 +219,7 @@ def downloadbackup(entity_type, entity):
     except Exception as err:
         logger.critical(str(err))
 
-@app.put('/apiv1/backup/<entity_type>/<entity>')
+@app.put('/api/v1/backup/<entity_type>/<entity>')
 def uploadbackup(entity_type, entity):
     try:
         for valid_type in ['pg', 'mysql']:

@@ -16,7 +16,7 @@ do
 	USER_NAME='user_'$i
 	let i++
 #	echo "DB=${DB_NAME}; USER=${USER_NAME}"
-	curl -XPOST -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"host\":\"$HS\", \"name\":\"$DB_NAME\", \"user\":\"$USER_NAME\"}" http://localhost:8080/apiv1/$TP >> $RESP
+	curl -XPOST -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"host\":\"$HS\", \"name\":\"$DB_NAME\", \"user\":\"$USER_NAME\"}" http://localhost:8080/api/v1/$TP >> $RESP
 done
 
 read
@@ -28,7 +28,7 @@ do
 	PASS=$(grep $DB_NAME $RESP | sed 's/.\+"password":\ "\(.\+\)"}/\1/')
 	let i++
 #	echo "DB=${DB_NAME}"
-	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"true\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/$TP
+	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"true\", \"pass\":\"$PASS\"}" http://localhost:8080/api/v1/$TP
 done
 
 let i=6
@@ -38,9 +38,9 @@ do
 	PASS=$(grep $DB_NAME $RESP | sed 's/.\+"password":\ "\(.\+\)"}/\1/')
 	let i++
 #	echo "DB=${DB_NAME}"
-	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"false\", \"pass\":\"$PASS\"}" http://localhost:8080/apiv1/$TP
+	curl -XDELETE -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -H "Content-Type: application/json" -H "Accept: application/json" -d "{\"name\":\"$DB_NAME\", \"backup\":\"false\", \"pass\":\"$PASS\"}" http://localhost:8080/api/v1/$TP
 done
 
 
-curl -v -XPUT -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -d @test_dump_pg http://localhost:8080/apiv1/backup/pg/pg1
+curl -v -XPUT -H "Authorization: Basic bGFiYXo6cnR5ZGZnNDU2" -d @test_dump_pg http://localhost:8080/api/v1/backup/pg/pg1
 

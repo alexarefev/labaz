@@ -179,7 +179,7 @@ BEGIN
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN
         RAISE NOTICE 'Updating database status';
-        UPDATE databases SET db_state='1' WHERE db_name=database_name AND host_id=host;
+        UPDATE databases SET db_state='-1' WHERE db_name=database_name AND host_id=host;
         SELECT host_name INTO name FROM hosts WHERE host_id=host;
         IF backup = true THEN
             RAISE NOTICE 'The database backup and deletion %', database_name;

@@ -9,4 +9,6 @@ export LOCAL_DB_USER="pg"
 export LOCAL_DB_PASSWORD="pgpgpgpppp"
 export LOG_LEVEL="DEBUG"
 
-python3 main_worker.py > "/var/log/pgmgmt/worker.log" 2>&1 &
+python3 remote_worker.py >> /var/log/pgmgmt/worker.log 2>&1 &
+python3 local_worker.py >> /var/log/pgmgmt/worker.log 2>&1 &
+python3 local_worker_async.py >> /var/log/pgmgmt/worker.log 2>&1 &

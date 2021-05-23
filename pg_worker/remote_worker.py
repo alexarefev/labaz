@@ -1,3 +1,6 @@
+import os
+import logging
+import psycopg2
 '''
 Management server interaction
 '''
@@ -33,7 +36,7 @@ def queue_reading(remote_db, logger, *args):
                 remote_db.execute(sql)
                 batch = remote_db.fetchall()
                 for i in range(0, len(batch)):
-                    logger.debug("server: {}, database: {}, user: {}, action: {}, backup: {}".format(
+                    logger.debug("server: {}, database: {}, user: {}, action: {}, addition: {}".format(
                                   batch[i][8], batch[i][5], batch[i][6], batch[i][4],
                                   batch[i][7]))
                 sql = "SELECT * FROM pgq.finish_batch({});".format(batch_set[0])
@@ -45,15 +48,74 @@ def queue_reading(remote_db, logger, *args):
     except Exception as err:
         logger.critical(str(err))
 
-def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
-    '''
-    Set database status or delete record with particular database from databases list
-    '''
+if __name__ == "__main__":
+
+    UNAME = os.uname()[1]
+    WORKER_NAME = __file__
+
+    REMOTE_DB_NAME = os.environ['REMOTE_DB_NAME']
+    REMOTE_DB_USER = os.environ['REMOTE_DB_USER']
+    REMOTE_DB_PASSWORD = os.environ['REMOTE_DB_PASSWORD']
+    REMOTE_DB_HOST = os.environ['REMOTE_DB_HOST']
+
+    LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
+    LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
+    BACKUP_DIR = os.environ['BACKUP_DIR']
+    LOG_LEVEL = os.environ['LOG_LEVEL']
+
+    LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
+    logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
+    logger = logging.getLogger(WORKER_NAME)
+
+    logger.info("Host name is {}".format(UNAME))
+    logger.info("Backup directory is {}".format(BACKUP_DIR))
+
+    QUEUE_NAME = "pg"
+    PREF = "worker"
+
     try:
-        sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(entity_name, ack_type, db_type)
-        remote_db.execute(sql)
-        result = remote_db.fetchone()[0].split(',')
-        logger.debug("{} {}".format(entity_name, result[1]))
-        return 0
+        remote_connection_string = ("host='{}' dbname='{}' user='{}' password='{}' port=5432".format(
+                                     REMOTE_DB_HOST, REMOTE_DB_NAME, REMOTE_DB_USER, REMOTE_DB_PASSWORD))
+        logger.debug(remote_connection_string)
+        remote_connection = psycopg2.connect(remote_connection_string)
+        remote_db = remote_connection.cursor()
+        remote_connection.autocommit = True
+        logger.info("PostgreSQL Management has been connected")
+        local_connection_string = ("dbname='{}' user='{}'".format(LOCAL_DB_NAME, LOCAL_DB_USER))
+        local_connection = psycopg2.connect(local_connection_string)
+        local_db = local_connection.cursor()
+        local_connection.autocommit = True
+        logger.info("PostgreSQL local has been connected")
+
+        worker_registration(remote_db, logger, QUEUE_NAME, PREF, UNAME)
+
+        while True:
+            tasks = queue_reading(remote_db, logger, QUEUE_NAME, PREF, UNAME)
+            if tasks:
+                for task in tasks:
+                    if task[4] == 'create' and UNAME == task[8]:
+                        sql = "INSERT INTO mgmt_task (db_name, db_task, db_user, db_secret) VALUES('{}', '{}', '{}', '{}');".format(task[5], '1', task[6], task[7])
+                        local_db.execute(sql)
+                        logger.debug("Creation task for database {} has been inserted".format(task[5]))
+                    elif task[4] == 'delete' and UNAME == task[7]:
+                        if task[8] == 'backup':
+                            sql = "INSERT INTO mgmt_task(db_name, db_task, db_user) VALUES('{}', '{}', '{}');".format(task[5], '3', task[6])
+                            local_db.execute(sql)
+                            logger.debug("Delete with backup task for database {} has been inserted".format(task[5]))
+                        else:
+                            sql = "INSERT INTO mgmt_task(db_name, db_task, db_user) VALUES('{}', '{}', '{}');".format(task[5], '2', task[6])
+                            local_db.execute(sql)
+                            logger.debug("Delete task for database {} has been inserted".format(task[5]))
+                    elif task[4] == 'recover' and UNAME == task[7]:
+                        sql = "INSERT INTO mgmt_task(db_name, db_task, db_file, db_user) VALUES('{}', '{}', '{}', '{}');".format(task[5], '4', task[8], task[6])
+                        local_db.execute(sql)
+                        logger.debug("Recover task for database {} has been inserted".format(task[5]))
+                    else:
+                        logger.warning('Task for other server or unknown operation')
+
     except Exception as err:
         logger.critical(str(err))
+        remote_db.close()
+        remote_connection.close()
+        local_db.close()
+        local_connection.close()

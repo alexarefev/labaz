@@ -8,5 +8,8 @@ export LOCAL_DB_USER="{{ mysql.user }}"
 export LOCAL_DB_PASSWORD="{{ mysql.pass }}"
 export LOCAL_DB_NAME="mysql"
 export LOG_LEVEL="DEBUG"
+export PID_DIR="{{ pid }}"
 
-python3 main_worker.py > {{ log }}/worker.log 2>&1 &
+python3 remote_worker.py >> {{ log }}/worker.log 2>&1 &
+python3 local_worker.py >> {{ log }}/worker.log 2>&1 &
+python3 local_worker_async.py >> {{ log }}/worker.log 2>&1 &

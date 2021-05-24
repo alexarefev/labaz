@@ -13,6 +13,7 @@ mysql:
     innodb_flush_log_at_trx_commit = 2
 share: /mnt/backups
 log: /var/log/pgmgmt
+pid: /run/pgmgmt
 pgmgmt:
   user: pgmgmt
   pass: paaasssworddd

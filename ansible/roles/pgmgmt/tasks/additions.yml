@@ -65,7 +65,10 @@
   become_user: postgres
 - name: Create folder for logs
   file:
-    path: "{{ log }}"
+    path: "{{ item }}"
     state: directory
     owner: "{{ os.user }}" 
     group: "{{ os.user }}"
+  with_items:
+    - {{ log }}
+    - {{ pid }}

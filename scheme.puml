@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+node "PG management" {
+  database {
+    [PGQ]
+    [PG-MGMT]
+  }
+    [API]
+  folder "NFS folder" {
+    [SQL dump]
+  }
+}
+
+node "PostgreSQL" {
+  database {
+    [MGMT]
+    [DB1]
+    [DB2]
+  }
+    [Remote worker]
+    [Local worker]
+    [Local asynchronous worker]
+}
+
+cloud {
+  [Request]
+  }
+
+[Request] -right-> [API]
+[Remote worker] --> [PGQ]
+[Remote worker] --> [MGMT]
+[Local worker] --> [MGMT]
+[Local asynchronous worker] --> [SQL dump]
+[Local asynchronous worker] --> [MGMT]
+[API] --> [PG-MGMT]
+@enduml

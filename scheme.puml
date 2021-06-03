@@ -26,6 +26,7 @@ cloud {
   [Request]
   }
 
+
 [Request] -right-> [API]
 [Remote worker] --> [PGQ]
 [Remote worker] --> [MGMT]
@@ -33,4 +34,5 @@ cloud {
 [Local asynchronous worker] --> [SQL dump]
 [Local asynchronous worker] --> [MGMT]
 [API] --> [PG-MGMT]
+[API] --> [PGQ]
 @enduml

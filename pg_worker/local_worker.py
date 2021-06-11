@@ -2,8 +2,12 @@
 Locale server interaction
 '''
 import os
+<<<<<<< HEAD
 import psycopg2
 import logging
+=======
+import asyncio
+>>>>>>> async
 
 def create_entity(local_db, remote_db, logger):
     '''
@@ -66,6 +70,7 @@ def drop_entity(local_db, remote_db, logger):
     except Exception as err:
         logger.critical(str(err))
 
+<<<<<<< HEAD
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
@@ -121,6 +126,35 @@ if __name__ == "__main__":
             create_entity(local_db, remote_db, logger)
             drop_entity(local_db, remote_db, logger)
 
+=======
+async def backup_entity(uname, entity_name, backup_dir, logger):
+    '''
+    Perform a backup
+    '''
+    try:
+        backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}".format(
+                           entity_name, backup_dir, uname, entity_name))
+        proc = await asyncio.create_subprocess_shell(backup_command)
+        result = proc.returncode
+        logger.debug("{} has been backuped into {} with result {}".format(entity_name, backup_dir, result))
+        return proc
+    except Exception as err:
+        logger.critical(str(err))
+
+async def recover_entity(task_property, local_db, backup_dir, logger):
+    '''
+    Recover from a backup
+    '''
+    try:
+        recovery_command = ("gunzip < {}/{} | psql {}".format(backup_dir, task_property[8], task_property[5]))
+        proc = await asyncio.create_subprocess_shell(recovery_command)
+        result = proc.returncode
+        logger.debug("{} has been recovered with result {}".format(task_property[5], result))
+        sql = 'GRANT ALL ON DATABASE "{}" TO "{}"'.format(task_property[5], task_property[6])
+        local_db.execute(sql)
+        logger.debug("Access to {} database has been granted".format(task_property[5]))
+        return proc
+>>>>>>> async
     except Exception as err:
         logger.critical(str(err))
         remote_db.close()

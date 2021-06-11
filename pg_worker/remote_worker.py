@@ -48,6 +48,7 @@ def queue_reading(remote_db, logger, *args):
     except Exception as err:
         logger.critical(str(err))
 
+<<<<<<< HEAD
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
@@ -85,6 +86,12 @@ if __name__ == "__main__":
         logger.error("PID file exists {}, terminating".format(pid_path))
         exit()
 
+=======
+async def db_acknowledge(remote_db, entity_name, ack_type, db_type, logger):
+    '''
+    Set database status or delete record with particular database from databases list
+    '''
+>>>>>>> async
     try:
         remote_connection_string = ("host='{}' dbname='{}' user='{}' password='{}' port=5432".format(
                                      REMOTE_DB_HOST, REMOTE_DB_NAME, REMOTE_DB_USER, REMOTE_DB_PASSWORD))

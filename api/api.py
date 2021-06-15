@@ -238,6 +238,16 @@ def uploadbackup(entity_type, entity):
     except Exception as err:
         logger.critical(str(err))
 
+@app.get('/api/v1/features')
+def listfeatures():
+    try:
+        logger.debug("Features list has been sent")
+        response.status = 200
+        return static_file('api.html', root='./')
+
+    except Exception as err:
+        logger.critical(str(err))
+
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]

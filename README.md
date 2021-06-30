@@ -3,7 +3,7 @@
 ##Description
 Python scripts kit for PostgreSQL and MySQL servers in a development environment.
 
-![Scheme][scheme.png]
+![Scheme][scheme.jpg]
 
 ##How it works
 `API` is REST API. Available operations:
@@ -22,3 +22,5 @@ a database in PostgreSQL or MySQL.
 `Local asynchronous worker` chooses tasks for backup and restore and implements those tasks.
 
 `NFS folder` stores SQL dumps. Downloading and uploading SQL dump files goes through the API.
+
+All API features: /api/v1/features

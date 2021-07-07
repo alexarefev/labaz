@@ -172,9 +172,9 @@ DECLARE
     type_name varchar;
     pass_chk boolean;
 BEGIN
-    SELECT t1.db_id, t1.host_id, t1.db_user, t2.host_type INTO id, host, user_name, type_name FROM databases t1, hosts t2 WHERE t1.db_name=database_name and t2.host_id=t1.host_id and t2.host_type=db_type;
+    SELECT t1.db_id, t1.host_id, t1.db_user, t2.host_type INTO id, host, user_name, type_name FROM databases t1, hosts t2 WHERE t1.db_state=1 AND t1.db_name=database_name AND t2.host_id=t1.host_id AND t2.host_type=db_type;
     IF COALESCE(id,0) = 0 THEN
-        RETURN '1, Database does not exist';
+        RETURN '1, Database does not exist or status is wrong';
     END IF;
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN
@@ -226,9 +226,9 @@ DECLARE
     type_name varchar;
     pass_chk boolean;
 BEGIN
-    SELECT t1.db_id, t1.host_id, t1.db_user, t2.host_type INTO id, host, user_name, type_name FROM databases t1, hosts t2 WHERE t1.db_name=database_name and t2.host_id=t1.host_id and t2.host_type=db_type;
+    SELECT t1.db_id, t1.host_id, t1.db_user, t2.host_type INTO id, host, user_name, type_name FROM databases t1, hosts t2 WHERE t1.db_state=1 AND t1.db_name=database_name and t2.host_id=t1.host_id and t2.host_type=db_type;
     IF COALESCE(id,0) = 0 THEN
-        RETURN '1, Database does not exist';
+        RETURN '1, Database does not exist or status is wrong';
     END IF;
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN

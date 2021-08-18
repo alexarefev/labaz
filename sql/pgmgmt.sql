@@ -115,6 +115,7 @@ DECLARE
     db_chk integer;
     type_name varchar;
     srv_name varchar;
+    worker_chk integer;
 BEGIN
     SELECT count(t1.db_id) INTO db_chk FROM databases t1, hosts t2 WHERE t1.db_name=database_name AND t2.host_id=t1.host_id AND t2.host_type=db_type;
     IF db_chk = 0 THEN
@@ -129,6 +130,10 @@ BEGIN
 	    IF COALESCE(id,0) = 0 THEN
 		RETURN '3, Invalid server';
 	    END IF;
+        END IF;
+        SELECT count(t2.co_id) INTO worker_chk FROM hosts t1, pgq.consumer t2 WHERE t2.co_name='worker_'||t1.host_name AND t1.host_name=host;
+        IF worker_chk = 0 THEN
+            RETURN '4, Worker is not registered';
         END IF;
         IF database_name = '' THEN
             SELECT gen_random_uuid() INTO db;
@@ -150,7 +155,6 @@ BEGIN
     ELSE
         RETURN '1, Database exists';
     END IF;
-
 END;
 $$;
 
@@ -171,10 +175,15 @@ DECLARE
     user_name varchar;
     type_name varchar;
     pass_chk boolean;
+    worker_chk integer;
 BEGIN
     SELECT t1.db_id, t1.host_id, t1.db_user, t2.host_type INTO id, host, user_name, type_name FROM databases t1, hosts t2 WHERE t1.db_state=1 AND t1.db_name=database_name AND t2.host_id=t1.host_id AND t2.host_type=db_type;
     IF COALESCE(id,0) = 0 THEN
         RETURN '1, Database does not exist or status is wrong';
+    END IF;
+    SELECT count(t2.co_id) INTO worker_chk FROM hosts t1, pgq.consumer t2 WHERE t2.co_name='worker_'||t1.host_name AND t1.host_id=host;
+    IF worker_chk = 0 THEN
+         RETURN '3, Worker is not registered';
     END IF;
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN
@@ -225,10 +234,15 @@ DECLARE
     user_name varchar;
     type_name varchar;
     pass_chk boolean;
+    worker_chk integer;
 BEGIN
     SELECT t1.db_id, t1.host_id, t1.db_user, t2.host_type INTO id, host, user_name, type_name FROM databases t1, hosts t2 WHERE t1.db_state=1 AND t1.db_name=database_name and t2.host_id=t1.host_id and t2.host_type=db_type;
     IF COALESCE(id,0) = 0 THEN
         RETURN '1, Database does not exist or status is wrong';
+    END IF;
+    SELECT count(t2.co_id) INTO worker_chk FROM hosts t1, pgq.consumer t2 WHERE t2.co_name='worker_'||t1.host_name AND t1.host_id=host;
+    IF worker_chk = 0 THEN
+         RETURN '3, Worker is not registered';
     END IF;
     SELECT (db_secret = crypt(user_pass, db_secret)) INTO pass_chk FROM databases WHERE db_id = id;
     IF pass_chk = 't' THEN
@@ -251,10 +265,15 @@ ALTER FUNCTION public.dbrecover(database_name character varying, backup_file cha
 -- Name: hostlist(character varying); Type: FUNCTION; Schema: public; Owner: pgmgmt
 --
 
-CREATE FUNCTION public.hostlist(db_type character varying) RETURNS TABLE(host_name character varying, active integer)
+CREATE FUNCTION public.hostlist(db_type character varying) RETURNS TABLE(host_name character varying, active integer, last_ack character varying)
     LANGUAGE sql
     AS $$
-    SELECT t1.host_name, CASE WHEN t2.co_id IS NOT NULL THEN 1 ELSE 0 END AS active FROM hosts t1 LEFT JOIN pgq.consumer t2 ON 'worker_'||t1.host_name=t2.co_name WHERE t1.host_type=db_type;
+    SELECT t1.host_name, 
+	CASE WHEN t2.co_id IS NOT NULL THEN 1 ELSE 0 END AS active, 
+	CAST(t3.sub_active AS varchar) AS last_ack
+    FROM hosts t1 LEFT JOIN pgq.consumer t2 ON 'worker_'||t1.host_name=t2.co_name 
+    LEFT JOIN pgq.subscription t3 ON t2.co_id=t3.sub_consumer
+    WHERE t1.host_type=db_type;
 $$;
 
 

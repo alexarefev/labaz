@@ -190,7 +190,7 @@ def listhost(entity_type):
                     logger.info("JSON: {}".format(json_data))
                     json_list =[]
                     for result in results:
-                        json_str = { "host": result[0], "active": result[1] }
+                        json_str = { "host": result[0], "active": result[1], "last_ack": str(result[2]) }
                         logger.debug(json_str)
                         json_list.append(json_str)
                     json_data.update({"data":json_list})

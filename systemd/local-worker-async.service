@@ -1,0 +1,10 @@
+[Unit]
+Description=PG-MGMT startup script.
+
+[Service]
+Type=simple
+EnvironmentFile=/home/worker/worker.env
+ExecStart=/usr/bin/python /home/worker/all.py
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=PG-MGMT remote worker.
+After=postgresql.service
+
+[Service]
+Type=exec
+EnvironmentFile=/home/worker/worker.env
+ExecStart=/usr/bin/python3 /home/worker/remote_worker.py
+PIDFile=$PID_DIR/remote-worker.pid
+StandardOutput=$LOG_FILE
+StandardError=$LOG_FILE
+User=worker
+Group=worker
+
+[Install]
+WantedBy=multi-user.target

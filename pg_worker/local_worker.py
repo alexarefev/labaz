@@ -4,6 +4,7 @@ Locale server interaction
 import os
 import psycopg2
 import logging
+import systemd.daemon
 
 def create_entity(local_db, remote_db, logger):
     '''
@@ -116,6 +117,8 @@ if __name__ == "__main__":
         local_db = local_connection.cursor()
         local_connection.autocommit = True
         logger.info("PostgreSQL local has been connected")
+        
+        systemd.daemon.notify('READY=1')
 
         while True:
             create_entity(local_db, remote_db, logger)
@@ -123,7 +126,12 @@ if __name__ == "__main__":
 
     except Exception as err:
         logger.critical(str(err))
-        remote_db.close()
-        remote_connection.close()
-        local_db.close()
-        local_connection.close()
+    finally:
+        if os.path.isfile(pid_path) is True:
+            os.remove(pid_path)
+        if remote_connection:
+            remote_db.close()
+            remote_connection.close()
+        if local_connection:
+            local_db.close()
+            local_connection.close()

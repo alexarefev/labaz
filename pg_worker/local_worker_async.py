@@ -5,6 +5,8 @@ import os
 import psycopg2
 import asyncio
 import logging
+import systemd.daemon
+
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:
@@ -117,6 +119,8 @@ if __name__ == "__main__":
         local_connection.autocommit = True
         logger.info("PostgreSQL local has been connected")
 
+        systemd.daemon.notify('READY=1')
+
         while True:
             sql = 'SELECT * FROM mgmt_task WHERE db_task=3 OR db_task=4;'
             local_db.execute(sql)
@@ -129,7 +133,12 @@ if __name__ == "__main__":
 
     except Exception as err:
         logger.critical(str(err))
-        remote_db.close()
-        remote_connection.close()
-        local_db.close()
-        local_connection.close()
+    finally:
+        if os.path.isfile(pid_path) is True:
+            os.remove(pid_path)
+        if remote_connection:
+            remote_db.close()
+            remote_connection.close()
+        if local_connection:
+            local_db.close()
+            local_connection.close()

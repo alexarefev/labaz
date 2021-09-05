@@ -5,6 +5,7 @@ import os
 import logging
 import psycopg2
 import pymysql
+from systemd.daemon import notify, Notification
 
 def worker_registration(remote_db, logger, *args):
     '''
@@ -61,9 +62,7 @@ if __name__ == "__main__":
 
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
-    LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    PID_DIR = os.environ['PID_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
@@ -72,17 +71,6 @@ if __name__ == "__main__":
 
     QUEUE_NAME = "mysql"
     PREF = "worker"
-
-    pid_path = "{}/{}".format(PID_DIR, WORKER_NAME)
-    pid = os.getpid()
-    if os.path.isfile(pid_path) is False:
-        pid_file = open(pid_path, 'w')
-        pid_file.write("{}\n".format(pid))
-        pid_file.close()
-        logger.info("PID {} saved to {}".format(pid, pid_path))
-    else:
-        logger.error("PID file exists {}, terminating".format(pid_path))
-        exit()
 
     try:
         remote_connection = psycopg2.connect(host=REMOTE_DB_HOST,
@@ -94,38 +82,38 @@ if __name__ == "__main__":
         remote_connection.autocommit = True
         logger.info("PostgreSQL Management has been connected")
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
-                                           password=LOCAL_DB_PASSWORD,
-                                           database=LOCAL_DB_NAME)
+                                           password=LOCAL_DB_PASSWORD)
         local_db = local_connection.cursor()
+        local_connection.autocommit = True
         logger.info("MySQL local has been connected")
 
         worker_registration(remote_db, logger, QUEUE_NAME, PREF, UNAME)
+
+        notify(Notification.READY)
 
         while True:
             tasks = queue_reading(remote_db, logger, QUEUE_NAME, PREF, UNAME)
             if tasks:
                 for task in tasks:
                     if task[4] == 'create' and UNAME == task[8]:
-                        sql = "INSERT INTO mgmt_task(db_name, db_task, db_user, db_secret) VALUES('{}', {}, '{}', '{}');".format(task[5], '1', task[6], task[7])
+                        sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user, db_secret) VALUES('{}', {}, '{}', '{}');".format(task[5], '1', task[6], task[7])
+                        logger.debug(sql)
                         local_db.execute(sql)
-                        local_connection.commit()
-                        logger.debug("Creation task database {} has been inserted".format(task[5]))
+                        res = local_db.fetchone()
+                        logger.debug("Creation task database {} has been inserted with result: {}".format(task[5], res))
                     elif task[4] == 'delete' and UNAME == task[7]:
                         if task[8] == 'backup':
                             sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user) VALUES('{}', {}, '{}');".format(task[5], '3', task[6])
+                            logger.debug(sql)
                             local_db.execute(sql)
-                            local_connection.commit()
-                            logger.debug("Deletion with backup task database {} has been inserted".format(task[5]))
-                        else: 
-                            sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user) VALUES('{}', {}, '{}');".format(task[5], '2', task[6])
-                            local_db.execute(sql)
-                            local_connection.commit()
-                            logger.debug("Deletion task database {} has been inserted".format(task[5]))
+                            res = local_db.fetchone()
+                            logger.debug("Backup task database {} has been inserted with result: {}".format(task[5], res))
                     elif task[4] == 'recover' and UNAME == task[7]:
                         sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_file, db_user) VALUES('{}', {}, '{}', '{}');".format(task[5], '4', task[8], task[6])
+                        logger.debug(sql)
                         local_db.execute(sql)
-                        local_connection.commit()
-                        logger.debug("Recover task database {} has been inserted".format(task[5]))
+                        res = local_db.fetchone()
+                        logger.debug("Recover task database {} has been inserted with result {}:".format(task[5], res))
                     else:
                         logger.warning('Task for other server or unknown operation')
 
@@ -135,3 +123,4 @@ if __name__ == "__main__":
         remote_connection.close()
         local_db.close()
         local_connection.close()
+

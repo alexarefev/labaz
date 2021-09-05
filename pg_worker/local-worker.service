@@ -1,10 +1,16 @@
 [Unit]
-Description=PG-MGMT startup script.
+Description=PG-MGMT local syncronus worker.
+After=postgresql.service
 
 [Service]
-Type=simple
+Type=notify
 EnvironmentFile=/home/worker/worker.env
-ExecStart=/usr/bin/python /home/worker/all.py
+User=worker
+Group=worker
+ExecStart=/usr/bin/python3 /home/worker/local_worker_async.py
+TimeoutStartSec=10
+StandardOutput=append:/var/log/pgmgmt/worker.log
+StandardError=append:/var/log/pgmgmt/worker.log
 
 [Install]
 WantedBy=multi-user.target

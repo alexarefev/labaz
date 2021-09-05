@@ -5,8 +5,7 @@ import os
 import psycopg2
 import asyncio
 import logging
-import systemd.daemon
-
+from systemd.daemon import notify, Notification
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:
@@ -81,7 +80,6 @@ if __name__ == "__main__":
     LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    PID_DIR = os.environ['PID_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
@@ -94,16 +92,6 @@ if __name__ == "__main__":
     QUEUE_NAME = "pg"
     PREF = "worker"
 
-    pid_path = "{}/{}".format(PID_DIR, WORKER_NAME)
-    pid = os.getpid()
-    if os.path.isfile(pid_path) is False:
-        pid_file = open(pid_path, 'w')
-        pid_file.write("{}\n".format(pid))
-        pid_file.close()
-        logger.info("PID {} saved to {}".format(pid, pid_path))
-    else:
-        logger.error("PID file exists {}, terminating".format(pid_path))
-        exit()
 
     try:
         remote_connection_string = ("host='{}' dbname='{}' user='{}' password='{}' port=5432".format(
@@ -119,7 +107,7 @@ if __name__ == "__main__":
         local_connection.autocommit = True
         logger.info("PostgreSQL local has been connected")
 
-        systemd.daemon.notify('READY=1')
+        notify(Notification.READY)
 
         while True:
             sql = 'SELECT * FROM mgmt_task WHERE db_task=3 OR db_task=4;'

@@ -6,6 +6,7 @@ import asyncio
 import logging
 import psycopg2
 import pymysql
+from systemd.daemon import notify, Notification
 
 
 async def proc_entity(tsk, local_db, remote_db, logger):
@@ -14,55 +15,50 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             '''
             Perform a backup
             '''
+            logger.debug("Backup DB: {}".format(tsk[0]))
             sql = "UPDATE mysql.mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
             local_db.execute(sql)
-            local_connection.commit()
             backup_command = "mysqldump -u{} -p'{}' {} | gzip -c -q > {}/{}_{}".format(
-                              LOCAL_DB_USER, LOCAL_DB_PASSWORD, tsk[0], BACKUP_DIR, UNAME, tsk[0])
+                           entity_user, entity_password, entity_name, backup_dir, uname, entity_name)
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
             result = proc.returncode
             logger.debug("{} has been backuped into {} with result {}".format(tsk[0], BACKUP_DIR, result))
             if result == 0:
-                sql = "DROP USER '{}'@'%';".format(tsk[2])
+                sql = "DROP USER '{}'@'%';".format(tsk[6])
                 local_db.execute(sql)
-                local_connection.commit()
-                logger.debug("{} user has been dropped".format(tsk[2]))
-                sql = "DROP DATABASE {};".format(tsk[0])
+                logger.debug("{} user has been dropped".format(tsk[6]))
+                sql = "DROP DATABASE {};".format(tsk[5])
                 local_db.execute(sql)
-                local_connection.commit()
-                logger.debug("{} database has been dropped".format(tsk[0]))
+                logger.debug("{} database has been dropped".format(tsk[5]))
                 sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'delete', QUEUE_NAME)
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
                 logger.debug("{} {}".format(tsk[0], result[1]))
                 sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=5".format(tsk[0])
                 local_db.execute(sql)
-                local_connection.commit()
         elif tsk[1] == 4:
             '''
             Recover from a backup
             '''
+            logger.debug("Recovery DB: {}".format(tsk[0]))
             sql = "UPDATE mysql.mgmt_task SET db_task=6 WHERE db_name='{}' AND db_task=4".format(tsk[0])
             local_db.execute(sql)
-            local_connection.commit()
-            recovery_command = "gunzip < {}/{} | mysql {} -u{} -p'{}'".format(BACKUP_DIR, tsk[4], tsk[0], LOCAL_DB_USER, LOCAL_DB_PASSWORD)
+            recovery_command = ("gunzip < {}/{} | psql {}".format(BACKUP_DIR, tsk[3], tsk[0]))
             proc = await asyncio.create_subprocess_shell(recovery_command)
             await proc.wait()
             result = proc.returncode
             logger.debug("{} has been recovered with result {}".format(tsk[0], result))
             if result == 0:
-                sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(tsk[0], tsk[2])
+                sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(tsk[5], tsk[6])
                 local_db.execute(sql)
-                local_connection.commit()
-                logger.debug("Access to {} database has been granted".format(tsk[0]))
+                logger.debug("Access to {} database has been granted".format(tsk[5]))
                 sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'create', QUEUE_NAME)
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
                 logger.debug("{} {}".format(tsk[0], result[1]))
                 sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=6".format(tsk[0])
                 local_db.execute(sql)
-                local_connection.commit()
     except Exception as err:
         logger.critical(str(err))
 
@@ -79,9 +75,7 @@ if __name__ == "__main__":
 
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
-    LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    PID_DIR = os.environ['PID_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
@@ -90,17 +84,6 @@ if __name__ == "__main__":
 
     QUEUE_NAME = "mysql"
     PREF = "worker"
-
-    pid_path = "{}/{}".format(PID_DIR, WORKER_NAME)
-    pid = os.getpid()
-    if os.path.isfile(pid_path) is False:
-        pid_file = open(pid_path, 'w')
-        pid_file.write("{}\n".format(pid))
-        pid_file.close()
-        logger.info("PID {} saved to {}".format(pid, pid_path))
-    else:
-        logger.error("PID file exists {}, terminating".format(pid_path))
-        exit()
 
     try:
         remote_connection = psycopg2.connect(host=REMOTE_DB_HOST,
@@ -112,10 +95,12 @@ if __name__ == "__main__":
         remote_connection.autocommit = True
         logger.info("PostgreSQL Management has been connected")
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
-                                           password=LOCAL_DB_PASSWORD,
-                                           database=LOCAL_DB_NAME)
+                                           password=LOCAL_DB_PASSWORD)
         local_db = local_connection.cursor()
+        local_connection.autocommit = True
         logger.info("MySQL local has been connected")
+
+        notify(Notification.READY)
 
         while True:
             sql = 'SELECT * FROM mysql.mgmt_task WHERE db_task=3 OR db_task=4;'
@@ -126,7 +111,6 @@ if __name__ == "__main__":
                 coroutines = asyncio.gather(*[proc_entity(task, local_db, remote_db, logger) for task in tasks])
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(coroutines)
-            local_connection.commit()
 
     except Exception as err:
         logger.critical(str(err))
@@ -134,3 +118,4 @@ if __name__ == "__main__":
         remote_connection.close()
         local_db.close()
         local_connection.close()
+

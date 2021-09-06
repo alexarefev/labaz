@@ -3,6 +3,8 @@ import psycopg2
 import os
 import logging
 import re
+from systemd.daemon import notify, Notification
+from multiprocessing import Pool
 
 app = Bottle()
         
@@ -242,11 +244,15 @@ def uploadbackup(entity_type, entity):
 def listfeatures():
     try:
         logger.debug("Features list has been sent")
-        response.status = 200
+        response.status = 200 
         return static_file('api.html', root='./')
 
     except Exception as err:
         logger.critical(str(err))
+
+def run_api(port_number):
+        run(app, host='127.0.0.1', port=port_number)
+        return 0
 
 if __name__ == "__main__":
 
@@ -258,12 +264,12 @@ if __name__ == "__main__":
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
     
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    API_PORT = os.environ['API_PORT']
+    API_PORTS = os.environ['API_PORTS']
     LOG_LEVEL = os.environ['LOG_LEVEL']
     
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
     logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
-    logger = logging.getLogger(WORKER_NAME + API_PORT)
+    logger = logging.getLogger(WORKER_NAME)
     
     logger.info("MY NAME IS {}".format(UNAME))
     logger.info("BACKUP_DIR IS {}".format(BACKUP_DIR))
@@ -277,7 +283,11 @@ if __name__ == "__main__":
         local_connection.autocommit = True
         logger.info("PostgreSQL Management has been connected")
 
-        run(app, host='127.0.0.1', port=API_PORT)
+ 
+        notify(Notification.READY)
+        
+        with Pool(5) as p:
+            p.map(run_api, API_PORTS.split(' '))
     
     except Exception as err:
         logger.critical(str(err))

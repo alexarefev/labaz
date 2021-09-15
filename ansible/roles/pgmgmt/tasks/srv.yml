@@ -27,10 +27,7 @@
     - local-worker-async.service
     - local-worker.service
     - remote-worker.service
-- name: Systemd reread configs
-  systemd:
-    daemon_reload: yes
   notify:
     - start remote-worker  
     - start local-worker
-    - start local-async-worker
+    - start local-worker-async

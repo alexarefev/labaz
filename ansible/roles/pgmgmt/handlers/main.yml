@@ -45,9 +45,9 @@
     name: local-worker 
     state: started
     enabled: yes
-- name: start local-async-worker
+- name: start local-worker-async
   systemd:
-    name: local-async-worker 
+    name: local-worker-async 
     state: started
     enabled: yes
 - name: start api

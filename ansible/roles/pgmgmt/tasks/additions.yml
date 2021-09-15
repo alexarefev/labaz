@@ -70,5 +70,5 @@
     owner: "{{ os.user }}" 
     group: "{{ os.user }}"
   with_items:
-    - {{ log }}
-    - {{ pid }}
+    - "{{ log }}"
+    - "{{ pid }}"

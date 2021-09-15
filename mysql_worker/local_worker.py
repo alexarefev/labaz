@@ -5,7 +5,7 @@ import os
 import logging
 import psycopg2
 import pymysql
-from systemd.daemon import notify, Notification
+from cysystemd.daemon import notify, Notification
 
 def create_entity(local_db, remote_db, logger):
     '''

@@ -5,7 +5,7 @@ import os
 import psycopg2
 import asyncio
 import logging
-from systemd.daemon import notify, Notification
+from cysystemd.daemon import notify, Notification
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:

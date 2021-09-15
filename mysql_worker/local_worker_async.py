@@ -6,7 +6,7 @@ import asyncio
 import logging
 import psycopg2
 import pymysql
-from systemd.daemon import notify, Notification
+from cysystemd.daemon import notify, Notification
 
 
 async def proc_entity(tsk, local_db, remote_db, logger):

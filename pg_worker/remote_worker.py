@@ -1,7 +1,7 @@
 import os
 import logging
 import psycopg2
-from systemd.daemon import notify, Notification
+from cysystemd.daemon import notify, Notification
 
 '''
 Management server interaction

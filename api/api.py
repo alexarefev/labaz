@@ -3,7 +3,7 @@ import psycopg2
 import os
 import logging
 import re
-from systemd.daemon import notify, Notification
+from cysystemd.daemon import notify, Notification
 from multiprocessing import Pool
 
 app = Bottle()
@@ -287,7 +287,7 @@ if __name__ == "__main__":
         notify(Notification.READY)
         
         with Pool(5) as p:
-            p.map(run_api, API_PORTS.split(' '))
+            p.map(run_api, API_PORTS.lstrip().rstrip().split(' '))
     
     except Exception as err:
         logger.critical(str(err))

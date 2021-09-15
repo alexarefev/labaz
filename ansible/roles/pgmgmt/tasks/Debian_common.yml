@@ -20,13 +20,16 @@
     - { name: 'net.ipv4.tcp_wmem', value: '4096 4096 16777216' }
 - name: Packages installation (Debian)
   apt:
-    name: ['gnupg', 'net-tools', 'python3-psycopg2', 'libsystemd-dev'] 
+    name: ['gnupg', 'net-tools', 'python3-psycopg2', 'libsystemd-dev', 'python3-pip'] 
     state: present
     update_cache: yes
     force_apt_get: yes
-- name: Install Python systemd
+- name: Install Python systemd (Debian)
   pip:
-    name: systemd
+    name: cysystemd
+- name: Remove dependencies that are no longer required (Debian)
+  apt:
+    autoremove: yes
 - name: PostgreSQL key (All)
   apt_key:
     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc

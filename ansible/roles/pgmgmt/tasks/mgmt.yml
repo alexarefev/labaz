@@ -19,15 +19,12 @@
     - api.env
 - name: Create Systemd units
   copy:
-    src: "{{ item }}"
+    src: "api/{{ item }}"
     dest: "/lib/systemd/system/{{ item }}"
     owner: "root"
     mode: '640'
   with_items:
     - api-pg-mgmt.service
-- name: Systemd reread configs
-  systemd:
-    daemon_reload: yes
   notify: 
     - start api
 - name: Create database for management (Mgmt)

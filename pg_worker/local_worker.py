@@ -4,7 +4,7 @@ Locale server interaction
 import os
 import psycopg2
 import logging
-from systemd.daemon import notify, Notification
+from cysystemd.daemon import notify, Notification
 
 def create_entity(local_db, remote_db, logger):
     '''

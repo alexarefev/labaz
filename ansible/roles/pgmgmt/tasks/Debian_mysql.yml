@@ -1,5 +1,5 @@
 ---
-- name: Add MariaDB key (Debian MySQL)
+- name: Add MariaDB key (MySQL Debian)
   apt_key:
     url: https://mariadb.org/mariadb_release_signing_key.asc
     state: present
@@ -12,13 +12,13 @@
     mode: 0644
   loop:
     - mariadb.list
-- name: Install list of packages (Debian MySQL)
+- name: Install list of packages (MySQL Debian)
   apt:
     name: [ 'apt-transport-https', 'net-tools', 'gnupg', 'software-properties-common', 'python3-pip', 'python3-pymysql' ]
     state: latest
     update_cache: yes
     force_apt_get: yes
-- name: Set security limits (Debian MySQL)
+- name: Set security limits (MySQL Debian)
   lineinfile:
     path: /etc/security/limits.conf
     line: "{{ item }}" 
@@ -28,12 +28,12 @@
     - "* hard nofile 10485760"
     - "root soft nofile 10485760"
     - "root hard nofile 10485760"
-- name: Install MariaDB server (Debian MySQL)
+- name: Install MariaDB server (MySQL Debian)
   apt:
     name: "mariadb-server"
     update_cache: yes
     force_apt_get: yes
-- name: Change MySQL config (Debian MySQL)
+- name: Change MySQL config (MySQL Debian)
   lineinfile:
     path: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: "{{ item.reg }}"
@@ -44,21 +44,26 @@
     - { reg: "max_connections",  line: "max_connections = {{ mysql.conn }}" }
   notify:
     - restart mysql
-- name: Change MySQL config (Debian MySQL)
+- name: Change MySQL config (MySQL Debian)
   blockinfile:
     path: /etc/mysql/mariadb.conf.d/50-server.cnf
     block: "{{ mysql.conf }}"
     insertbefore: "[embedded]"
   notify:
     - restart mysql
-- name: NFS installation (Debian MySQL)
+- name: NFS installation (MySQL Debian)
   apt:
     name: ['nfs-common']
     state: present
     update_cache: yes
     force_apt_get: yes
   when: fs.type == "nfs"
-- name: Create user (Debian MySQL)
+- name: Save query into variable (MySQL Debian)
+  set_fact:
+    create_query: "{{ lookup('file', 'files/sql/mysql.sql') }}"
+- name: Create table (MySQL Debian)
+  shell: "mysql -e '{{ create_query }}'"
+- name: Create user (MySQL Debian)
   mysql_user:
     name: "{{ mysql.user }}"
     password: "{{ mysql.pass }}"

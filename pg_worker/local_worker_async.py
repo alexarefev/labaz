@@ -122,8 +122,6 @@ if __name__ == "__main__":
     except Exception as err:
         logger.critical(str(err))
     finally:
-        if os.path.isfile(pid_path) is True:
-            os.remove(pid_path)
         if remote_connection:
             remote_db.close()
             remote_connection.close()

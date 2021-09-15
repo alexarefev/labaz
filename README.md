@@ -3,7 +3,7 @@
 ## Description
 Python scripts kit for PostgreSQL and MySQL servers in a development environment.
 
-![Scheme][scheme.jpg]
+![Scheme](scheme.jpg)
 
 ## How it works
 `API` is REST API. Available operations:

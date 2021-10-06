@@ -38,7 +38,7 @@ def queue_reading(remote_db, logger, *args):
                 remote_db.execute(sql)
                 batch = remote_db.fetchall()
                 for i in range(0, len(batch)):
-                    logger.debug("server: {}, database: {}, user: {}, action: {}, backup: {}".format(
+                    logger.debug("server: {}, database: {}, user: {}, action: {}, addition: {}".format(
                                   batch[i][8], batch[i][5], batch[i][6], batch[i][4],
                                   batch[i][7]))
                 sql = "SELECT * FROM pgq.finish_batch({});".format(batch_set[0])
@@ -53,7 +53,7 @@ def queue_reading(remote_db, logger, *args):
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
-    WORKER_NAME = __file__
+    WORKER_NAME = os.path.basename(__file__)
 
     REMOTE_DB_NAME = os.environ['REMOTE_DB_NAME']
     REMOTE_DB_USER = os.environ['REMOTE_DB_USER']
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
                                            password=LOCAL_DB_PASSWORD)
         local_db = local_connection.cursor()
-        local_connection.autocommit = True
+        #local_connection.autocommit = True
         logger.info("MySQL local has been connected")
 
         worker_registration(remote_db, logger, QUEUE_NAME, PREF, UNAME)
@@ -97,21 +97,24 @@ if __name__ == "__main__":
                 for task in tasks:
                     if task[4] == 'create' and UNAME == task[8]:
                         sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user, db_secret) VALUES('{}', {}, '{}', '{}');".format(task[5], '1', task[6], task[7])
-                        logger.debug(sql)
+                        #logger.debug(sql)
                         local_db.execute(sql)
+                        local_connection.commit()
                         res = local_db.fetchone()
                         logger.debug("Creation task database {} has been inserted with result: {}".format(task[5], res))
                     elif task[4] == 'delete' and UNAME == task[7]:
                         if task[8] == 'backup':
                             sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user) VALUES('{}', {}, '{}');".format(task[5], '3', task[6])
-                            logger.debug(sql)
+                            #logger.debug(sql)
                             local_db.execute(sql)
+                            local_connection.commit()
                             res = local_db.fetchone()
                             logger.debug("Backup task database {} has been inserted with result: {}".format(task[5], res))
                     elif task[4] == 'recover' and UNAME == task[7]:
                         sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_file, db_user) VALUES('{}', {}, '{}', '{}');".format(task[5], '4', task[8], task[6])
-                        logger.debug(sql)
+                        #logger.debug(sql)
                         local_db.execute(sql)
+                        local_connection.commit()
                         res = local_db.fetchone()
                         logger.debug("Recover task database {} has been inserted with result {}:".format(task[5], res))
                     else:
@@ -123,4 +126,3 @@ if __name__ == "__main__":
         remote_connection.close()
         local_db.close()
         local_connection.close()
-

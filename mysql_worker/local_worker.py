@@ -15,21 +15,25 @@ def create_entity(local_db, remote_db, logger):
         sql = 'SELECT * FROM mysql.mgmt_task WHERE db_task=1;'
         local_db.execute(sql)
         tasks = local_db.fetchall()
+        local_connection.commit()
         if tasks:
             for task in tasks:
-                sql = "CREATE DATABASE {};".format(task[5])
+                sql = "CREATE DATABASE {};".format(task[0])
                 logger.debug(sql)
                 local_db.execute(sql)
-                logger.debug("{} database has been created".format(task[5]))
+                local_connection.commit()
+                logger.debug("{} database has been created".format(task[0]))
                 sql = "CREATE USER '{}'@'%' IDENTIFIED BY '{}';".format(
-                       task[6], task[7])
+                       task[2], task[3])
                 logger.debug(sql)
                 local_db.execute(sql)
-                logger.debug("{} user has been created".format(task[6]))
-                sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(task[5], task[6])
+                local_connection.commit()
+                logger.debug("{} user has been created".format(task[2]))
+                sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(task[0], task[2])
                 logger.debug(sql)
                 local_db.execute(sql)
-                logger.debug("Access to {} database has been granted".format(task[5]))
+                local_connection.commit()
+                logger.debug("Access to {} database has been granted".format(task[0]))
                 sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(task[0], 'create', QUEUE_NAME)
                 logger.debug(sql)
                 remote_db.execute(sql)
@@ -38,6 +42,7 @@ def create_entity(local_db, remote_db, logger):
                 sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=1".format(task[0])
                 logger.debug(sql)
                 local_db.execute(sql)
+                local_connection.commit()
     except Exception as err:
         logger.critical(str(err))
 
@@ -49,16 +54,19 @@ def drop_entity(local_db, remote_db, logger):
         sql = 'SELECT * FROM mysql.mgmt_task WHERE db_task=2;'
         local_db.execute(sql)
         tasks = local_db.fetchall()
+        local_connection.commit()
         if tasks:
             for task in tasks:
-                sql = "DROP USER '{}'@'%';".format(task[6])
+                sql = "DROP USER '{}'@'%';".format(task[2])
                 logger.debug(sql)
                 local_db.execute(sql)
-                logger.debug("{} user has been dropped".format(task[6]))
-                sql = "DROP DATABASE {};".format(task[5])
+                local_connection.commit()
+                logger.debug("{} user has been dropped".format(task[2]))
+                sql = "DROP DATABASE {};".format(task[0])
                 logger.debug(sql)
                 local_db.execute(sql)
-                logger.debug("{} database has been dropped".format(task[5]))
+                local_connection.commit()
+                logger.debug("{} database has been dropped".format(task[0]))
                 sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(task[0], 'delete', QUEUE_NAME)
                 logger.debug(sql)
                 remote_db.execute(sql)
@@ -67,6 +75,7 @@ def drop_entity(local_db, remote_db, logger):
                 sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=2".format(task[0])
                 logger.debug(sql)
                 local_db.execute(sql)
+                local_connection.commit()
     except Exception as err:
         logger.critical(str(err))
 
@@ -74,7 +83,7 @@ def drop_entity(local_db, remote_db, logger):
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
-    WORKER_NAME = __file__
+    WORKER_NAME = os.path.basename(__file__)
 
     REMOTE_DB_NAME = os.environ['REMOTE_DB_NAME']
     REMOTE_DB_USER = os.environ['REMOTE_DB_USER']
@@ -105,7 +114,6 @@ if __name__ == "__main__":
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
                                            password=LOCAL_DB_PASSWORD)
         local_db = local_connection.cursor()
-        local_connection.autocommit = True
         logger.info("MySQL local has been connected")
 
         notify(Notification.READY)
@@ -120,4 +128,3 @@ if __name__ == "__main__":
         remote_connection.close()
         local_db.close()
         local_connection.close()
-

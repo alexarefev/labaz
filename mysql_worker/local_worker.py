@@ -1,5 +1,5 @@
 '''
-Locale server interaction
+Local server interaction
 '''
 import os
 import logging
@@ -92,6 +92,7 @@ if __name__ == "__main__":
 
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
+    LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     BACKUP_DIR = os.environ['BACKUP_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
@@ -112,7 +113,8 @@ if __name__ == "__main__":
         remote_connection.autocommit = True
         logger.info("PostgreSQL Management has been connected")
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
-                                           password=LOCAL_DB_PASSWORD)
+                                           password=LOCAL_DB_PASSWORD,
+                                           database=LOCAL_DB_NAME)
         local_db = local_connection.cursor()
         logger.info("MySQL local has been connected")
 

@@ -1,5 +1,5 @@
 '''
-Locale server interaction
+Local server interaction
 '''
 import os
 import psycopg2

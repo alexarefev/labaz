@@ -97,26 +97,25 @@ if __name__ == "__main__":
                 for task in tasks:
                     if task[4] == 'create' and UNAME == task[8]:
                         sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user, db_secret) VALUES('{}', {}, '{}', '{}');".format(task[5], '1', task[6], task[7])
-                        #logger.debug(sql)
                         local_db.execute(sql)
                         local_connection.commit()
-                        res = local_db.fetchone()
-                        logger.debug("Creation task database {} has been inserted with result: {}".format(task[5], res))
+                        logger.debug("Creation task database {} has been inserted".format(task[5]))
                     elif task[4] == 'delete' and UNAME == task[7]:
                         if task[8] == 'backup':
                             sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user) VALUES('{}', {}, '{}');".format(task[5], '3', task[6])
-                            #logger.debug(sql)
                             local_db.execute(sql)
                             local_connection.commit()
-                            res = local_db.fetchone()
-                            logger.debug("Backup task database {} has been inserted with result: {}".format(task[5], res))
+                            logger.debug("Deletion with backup task database {} has been inserted".format(task[5]))
+                        else:
+                            sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user) VALUES('{}', {}, '{}');".format(task[5], '2', task[6])
+                            local_db.execute(sql)
+                            local_connection.commit()
+                            logger.debug("Deletion task database {} has been inserted".format(task[5]))
                     elif task[4] == 'recover' and UNAME == task[7]:
                         sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_file, db_user) VALUES('{}', {}, '{}', '{}');".format(task[5], '4', task[8], task[6])
-                        #logger.debug(sql)
                         local_db.execute(sql)
                         local_connection.commit()
-                        res = local_db.fetchone()
-                        logger.debug("Recover task database {} has been inserted with result {}:".format(task[5], res))
+                        logger.debug("Recover task database {} has been inserted".format(task[5]))
                     else:
                         logger.warning('Task for other server or unknown operation')
 

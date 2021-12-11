@@ -16,7 +16,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             logger.debug("Backup DB: {}".format(tsk[0]))
             sql = "UPDATE mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
             local_db.execute(sql)
-            backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}".format(
+            backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}.gz".format(
                                tsk[0], BACKUP_DIR, UNAME, tsk[0]))
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()

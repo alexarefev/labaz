@@ -19,7 +19,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             sql = "UPDATE mysql.mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
             local_db.execute(sql)
             local_connection.commit()
-            backup_command = "mysqldump -u{} -p'{}' {} | gzip -c -q > {}/{}_{}".format(
+            backup_command = "mysqldump -u{} -p'{}' {} | gzip -c -q > {}/{}_{}.gz".format(
                               LOCAL_DB_USER, LOCAL_DB_PASSWORD, tsk[0], BACKUP_DIR, UNAME, tsk[0])
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()

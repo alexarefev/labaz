@@ -84,7 +84,6 @@ if __name__ == "__main__":
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
                                            password=LOCAL_DB_PASSWORD)
         local_db = local_connection.cursor()
-        #local_connection.autocommit = True
         logger.info("MySQL local has been connected")
 
         worker_registration(remote_db, logger, QUEUE_NAME, PREF, UNAME)

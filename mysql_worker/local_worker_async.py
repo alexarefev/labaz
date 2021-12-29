@@ -116,7 +116,7 @@ if __name__ == "__main__":
             tasks = local_db.fetchall()
             local_connection.commit()
             if tasks:
-                #logger.debug("Task: {}".format(tasks))
+                logger.debug("Task: {}".format(tasks))
                 coroutines = asyncio.gather(*[proc_entity(task, local_db, remote_db, logger) for task in tasks])
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(coroutines)

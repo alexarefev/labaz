@@ -4,7 +4,7 @@ import os
 import logging
 import re
 import multiprocessing as mp
-from cysystemd.daemon import notify, Notification
+import cysystemd.daemon as sysd
 
 def run_api(port_number):
 
@@ -296,7 +296,7 @@ if __name__ == "__main__":
     
     try:
 
-        notify(Notification.READY)
+        sysd.notify(sysd.Notification.READY)
 
         with mp.Pool(5) as proc:
             proc.map(run_api, PORTS_LIST)

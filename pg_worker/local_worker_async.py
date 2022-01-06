@@ -5,7 +5,7 @@ import os
 import psycopg2
 import asyncio
 import logging
-from cysystemd.daemon import notify, Notification
+import cysystemd.daemon as sysd
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         local_connection.autocommit = True
         logger.info("PostgreSQL local has been connected")
 
-        notify(Notification.READY)
+        sysd.notify(sysd.Notification.READY)
 
         while True:
             sql = 'SELECT * FROM mgmt_task WHERE db_task=3 OR db_task=4;'

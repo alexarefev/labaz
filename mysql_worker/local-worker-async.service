@@ -8,7 +8,7 @@ EnvironmentFile=/home/worker/worker.env
 User=worker
 Group=worker
 ExecStart=/usr/bin/python3 /home/worker/local_worker_async.py
-TimeoutStartSec=10
+TimeoutStartSec=30
 StandardOutput=append:/var/log/pgmgmt/worker.log
 StandardError=append:/var/log/pgmgmt/worker.log
 

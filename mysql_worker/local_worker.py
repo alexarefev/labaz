@@ -5,7 +5,7 @@ import os
 import logging
 import psycopg2
 import pymysql
-from cysystemd.daemon import notify, Notification
+import cysystemd.daemon as sysd
 
 def create_entity(local_db, remote_db, logger):
     '''
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         local_db = local_connection.cursor()
         logger.info("MySQL local has been connected")
 
-        notify(Notification.READY)
+        sysd.notify(sysd.Notification.READY)
 
         while True:
             create_entity(local_db, remote_db, logger)

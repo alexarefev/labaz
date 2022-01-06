@@ -5,7 +5,7 @@ import os
 import logging
 import psycopg2
 import pymysql
-from cysystemd.daemon import notify, Notification
+import cysystemd.daemon as sysd
 
 def worker_registration(remote_db, logger, *args):
     '''
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
         worker_registration(remote_db, logger, QUEUE_NAME, PREF, UNAME)
 
-        notify(Notification.READY)
+        sysd.notify(sysd.Notification.READY)
 
         while True:
             tasks = queue_reading(remote_db, logger, QUEUE_NAME, PREF, UNAME)

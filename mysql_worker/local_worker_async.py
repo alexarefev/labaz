@@ -6,8 +6,7 @@ import asyncio
 import logging
 import psycopg2
 import pymysql
-from cysystemd.daemon import notify, Notification
-
+import cysystemd.daemon as sysd
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:
@@ -108,7 +107,7 @@ if __name__ == "__main__":
         local_db = local_connection.cursor()
         logger.info("MySQL local has been connected")
 
-        notify(Notification.READY)
+        sysd.notify(sysd.Notification.READY)
 
         while True:
             sql = 'SELECT * FROM mysql.mgmt_task WHERE db_task=3 OR db_task=4;'

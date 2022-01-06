@@ -4,7 +4,7 @@ Local server interaction
 import os
 import psycopg2
 import logging
-from cysystemd.daemon import notify, Notification
+import cysystemd.daemon as sysd 
 
 def create_entity(local_db, remote_db, logger):
     '''
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         local_connection.autocommit = True
         logger.info("PostgreSQL local has been connected")
         
-        notify(Notification.READY)
+        sysd.notify(sysd.Notification.READY)
 
         while True:
             create_entity(local_db, remote_db, logger)

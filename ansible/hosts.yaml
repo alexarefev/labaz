@@ -4,15 +4,15 @@ all:
       children:
         pg:
           hosts:
+            pg1:
             pg2:
-            pg3:
           vars:
             type: pg
             ansible_python_interpreter: /usr/bin/python3
         mysql:
           hosts:
-            mysql3:
-            mysql4:
+            mysql1:
+            mysql2:
           vars:
             type: mysql
             ansible_python_interpreter: /usr/bin/python3

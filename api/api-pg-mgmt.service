@@ -1,0 +1,16 @@
+[Unit]
+Description=PG-MGMT API.
+After=postgresql.service
+
+[Service]
+Type=notify
+EnvironmentFile=/home/worker/api.env
+User=worker
+Group=worker
+ExecStart=/usr/bin/python3 /home/worker/api.py
+TimeoutStartSec=10
+StandardOutput=append:/var/log/pgmgmt/api.log
+StandardError=append:/var/log/pgmgmt/api.log
+
+[Install]
+WantedBy=multi-user.target

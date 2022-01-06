@@ -1,12 +1,12 @@
 '''
-Locale server interaction
+Local server interaction
 '''
 import os
 import asyncio
 import logging
 import psycopg2
 import pymysql
-
+import cysystemd.daemon as sysd
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:
@@ -14,10 +14,11 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             '''
             Perform a backup
             '''
+            logger.debug("Backup DB: {}".format(tsk[0]))
             sql = "UPDATE mysql.mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
             local_db.execute(sql)
             local_connection.commit()
-            backup_command = "mysqldump -u{} -p'{}' {} | gzip -c -q > {}/{}_{}".format(
+            backup_command = "mysqldump -u{} -p'{}' {} | gzip -c -q > {}/{}_{}.gz".format(
                               LOCAL_DB_USER, LOCAL_DB_PASSWORD, tsk[0], BACKUP_DIR, UNAME, tsk[0])
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
@@ -43,6 +44,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             '''
             Recover from a backup
             '''
+            logger.debug("Recovery DB: {}".format(tsk[0]))
             sql = "UPDATE mysql.mgmt_task SET db_task=6 WHERE db_name='{}' AND db_task=4".format(tsk[0])
             local_db.execute(sql)
             local_connection.commit()
@@ -55,7 +57,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
                 sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(tsk[0], tsk[2])
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("Access to {} database has been granted".format(tsk[0]))
+                logger.debug("Access to {} database has been granted".format(tsk[2]))
                 sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'create', QUEUE_NAME)
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
@@ -70,7 +72,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
-    WORKER_NAME = __file__
+    WORKER_NAME = os.path.basename(__file__)
 
     REMOTE_DB_NAME = os.environ['REMOTE_DB_NAME']
     REMOTE_DB_USER = os.environ['REMOTE_DB_USER']
@@ -81,7 +83,6 @@ if __name__ == "__main__":
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
     LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    PID_DIR = os.environ['PID_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
@@ -90,17 +91,6 @@ if __name__ == "__main__":
 
     QUEUE_NAME = "mysql"
     PREF = "worker"
-
-    pid_path = "{}/{}".format(PID_DIR, WORKER_NAME)
-    pid = os.getpid()
-    if os.path.isfile(pid_path) is False:
-        pid_file = open(pid_path, 'w')
-        pid_file.write("{}\n".format(pid))
-        pid_file.close()
-        logger.info("PID {} saved to {}".format(pid, pid_path))
-    else:
-        logger.error("PID file exists {}, terminating".format(pid_path))
-        exit()
 
     try:
         remote_connection = psycopg2.connect(host=REMOTE_DB_HOST,
@@ -117,16 +107,18 @@ if __name__ == "__main__":
         local_db = local_connection.cursor()
         logger.info("MySQL local has been connected")
 
+        sysd.notify(sysd.Notification.READY)
+
         while True:
             sql = 'SELECT * FROM mysql.mgmt_task WHERE db_task=3 OR db_task=4;'
             local_db.execute(sql)
             tasks = local_db.fetchall()
+            local_connection.commit()
             if tasks:
                 logger.debug("Task: {}".format(tasks))
                 coroutines = asyncio.gather(*[proc_entity(task, local_db, remote_db, logger) for task in tasks])
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(coroutines)
-            local_connection.commit()
 
     except Exception as err:
         logger.critical(str(err))
@@ -134,3 +126,4 @@ if __name__ == "__main__":
         remote_connection.close()
         local_db.close()
         local_connection.close()
+

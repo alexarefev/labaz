@@ -1,10 +1,11 @@
 '''
-Locale server interaction
+Local server interaction
 '''
 import os
 import psycopg2
 import asyncio
 import logging
+import cysystemd.daemon as sysd
 
 async def proc_entity(tsk, local_db, remote_db, logger):
     try:
@@ -15,7 +16,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             logger.debug("Backup DB: {}".format(tsk[0]))
             sql = "UPDATE mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
             local_db.execute(sql)
-            backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}".format(
+            backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}.gz".format(
                                tsk[0], BACKUP_DIR, UNAME, tsk[0]))
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
@@ -79,7 +80,6 @@ if __name__ == "__main__":
     LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    PID_DIR = os.environ['PID_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
@@ -92,16 +92,6 @@ if __name__ == "__main__":
     QUEUE_NAME = "pg"
     PREF = "worker"
 
-    pid_path = "{}/{}".format(PID_DIR, WORKER_NAME)
-    pid = os.getpid()
-    if os.path.isfile(pid_path) is False:
-        pid_file = open(pid_path, 'w')
-        pid_file.write("{}\n".format(pid))
-        pid_file.close()
-        logger.info("PID {} saved to {}".format(pid, pid_path))
-    else:
-        logger.error("PID file exists {}, terminating".format(pid_path))
-        exit()
 
     try:
         remote_connection_string = ("host='{}' dbname='{}' user='{}' password='{}' port=5432".format(
@@ -117,6 +107,8 @@ if __name__ == "__main__":
         local_connection.autocommit = True
         logger.info("PostgreSQL local has been connected")
 
+        sysd.notify(sysd.Notification.READY)
+
         while True:
             sql = 'SELECT * FROM mgmt_task WHERE db_task=3 OR db_task=4;'
             local_db.execute(sql)
@@ -129,7 +121,10 @@ if __name__ == "__main__":
 
     except Exception as err:
         logger.critical(str(err))
-        remote_db.close()
-        remote_connection.close()
-        local_db.close()
-        local_connection.close()
+    finally:
+        if remote_connection:
+            remote_db.close()
+            remote_connection.close()
+        if local_connection:
+            local_db.close()
+            local_connection.close()

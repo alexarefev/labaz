@@ -8,6 +8,7 @@
   with_items:
     - { name: "postgres", src: "sql/pgmgmt.sql", dst: "pgmgmt.sql" }
     - { name: "{{ os.user }}", src: "api/api.py", dst: "api.py" }
+    - { name: "{{ os.user }}", src: "api/api.html", dst: "api.html" }
 - name: Copy files (PG)
   template:
     src: "{{ item }}.j2"
@@ -15,7 +16,17 @@
     owner: "{{ os.user }}"
     mode: '0750'
   with_items:
-    - api.sh
+    - api.env
+- name: Create Systemd units
+  copy:
+    src: "api/{{ item }}"
+    dest: "/lib/systemd/system/{{ item }}"
+    owner: "root"
+    mode: '640'
+  with_items:
+    - api-pg-mgmt.service
+  notify: 
+    - start api
 - name: Create database for management (Mgmt)
   postgresql_db:
     name: "{{ pgmgmt.db }}"

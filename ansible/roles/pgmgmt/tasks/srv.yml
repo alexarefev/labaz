@@ -1,19 +1,33 @@
 ---
-- name: Copy files (PG)
+- name: Copy files (PG MySQL)
   copy:
     src: "{{ type }}_worker/{{ item }}"
     dest: "~{{ os.user }}/{{ item }}"
     owner: "{{ os.user }}"
     mode: '0750'
   with_items:
-    - remote_worker.py
+    - local_worker_async.py
     - local_worker.py
-    - main_worker.py
-- name: Copy files (PG)
+    - remote_worker.py
+- name: Copy files (PG MySQL)
   template:
     src: "{{ type }}_worker/{{ item }}.j2"
     dest: "~{{ os.user }}/{{ item }}"
     owner: "{{ os.user }}"
     mode: '0750'
   with_items:
-    - worker.sh
+    - worker.env
+- name: Create Systemd units
+  copy:
+    src: "{{ type }}_worker/{{ item }}"
+    dest: "/lib/systemd/system/{{ item }}"
+    owner: "root"
+    mode: '640'
+  with_items:
+    - local-worker-async.service
+    - local-worker.service
+    - remote-worker.service
+  notify:
+    - start remote-worker  
+    - start local-worker
+    - start local-worker-async

@@ -5,6 +5,7 @@ import os
 import logging
 import psycopg2
 import pymysql
+import cysystemd.daemon as sysd
 
 def worker_registration(remote_db, logger, *args):
     '''
@@ -37,7 +38,7 @@ def queue_reading(remote_db, logger, *args):
                 remote_db.execute(sql)
                 batch = remote_db.fetchall()
                 for i in range(0, len(batch)):
-                    logger.debug("server: {}, database: {}, user: {}, action: {}, backup: {}".format(
+                    logger.debug("server: {}, database: {}, user: {}, action: {}, addition: {}".format(
                                   batch[i][8], batch[i][5], batch[i][6], batch[i][4],
                                   batch[i][7]))
                 sql = "SELECT * FROM pgq.finish_batch({});".format(batch_set[0])
@@ -52,7 +53,7 @@ def queue_reading(remote_db, logger, *args):
 if __name__ == "__main__":
 
     UNAME = os.uname()[1]
-    WORKER_NAME = __file__
+    WORKER_NAME = os.path.basename(__file__)
 
     REMOTE_DB_NAME = os.environ['REMOTE_DB_NAME']
     REMOTE_DB_USER = os.environ['REMOTE_DB_USER']
@@ -61,9 +62,7 @@ if __name__ == "__main__":
 
     LOCAL_DB_USER = os.environ['LOCAL_DB_USER']
     LOCAL_DB_PASSWORD = os.environ['LOCAL_DB_PASSWORD']
-    LOCAL_DB_NAME = os.environ['LOCAL_DB_NAME']
     BACKUP_DIR = os.environ['BACKUP_DIR']
-    PID_DIR = os.environ['PID_DIR']
     LOG_LEVEL = os.environ['LOG_LEVEL']
 
     LOGGER_FORMAT = '%(asctime)s [%(name)s] %(levelname)s %(lineno)s %(message)s'
@@ -72,17 +71,6 @@ if __name__ == "__main__":
 
     QUEUE_NAME = "mysql"
     PREF = "worker"
-
-    pid_path = "{}/{}".format(PID_DIR, WORKER_NAME)
-    pid = os.getpid()
-    if os.path.isfile(pid_path) is False:
-        pid_file = open(pid_path, 'w')
-        pid_file.write("{}\n".format(pid))
-        pid_file.close()
-        logger.info("PID {} saved to {}".format(pid, pid_path))
-    else:
-        logger.error("PID file exists {}, terminating".format(pid_path))
-        exit()
 
     try:
         remote_connection = psycopg2.connect(host=REMOTE_DB_HOST,
@@ -94,19 +82,20 @@ if __name__ == "__main__":
         remote_connection.autocommit = True
         logger.info("PostgreSQL Management has been connected")
         local_connection = pymysql.connect(user=LOCAL_DB_USER,
-                                           password=LOCAL_DB_PASSWORD,
-                                           database=LOCAL_DB_NAME)
+                                           password=LOCAL_DB_PASSWORD)
         local_db = local_connection.cursor()
         logger.info("MySQL local has been connected")
 
         worker_registration(remote_db, logger, QUEUE_NAME, PREF, UNAME)
+
+        sysd.notify(sysd.Notification.READY)
 
         while True:
             tasks = queue_reading(remote_db, logger, QUEUE_NAME, PREF, UNAME)
             if tasks:
                 for task in tasks:
                     if task[4] == 'create' and UNAME == task[8]:
-                        sql = "INSERT INTO mgmt_task(db_name, db_task, db_user, db_secret) VALUES('{}', {}, '{}', '{}');".format(task[5], '1', task[6], task[7])
+                        sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user, db_secret) VALUES('{}', {}, '{}', '{}');".format(task[5], '1', task[6], task[7])
                         local_db.execute(sql)
                         local_connection.commit()
                         logger.debug("Creation task database {} has been inserted".format(task[5]))
@@ -116,7 +105,7 @@ if __name__ == "__main__":
                             local_db.execute(sql)
                             local_connection.commit()
                             logger.debug("Deletion with backup task database {} has been inserted".format(task[5]))
-                        else: 
+                        else:
                             sql = "INSERT INTO mysql.mgmt_task(db_name, db_task, db_user) VALUES('{}', {}, '{}');".format(task[5], '2', task[6])
                             local_db.execute(sql)
                             local_connection.commit()

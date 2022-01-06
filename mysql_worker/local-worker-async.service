@@ -1,0 +1,16 @@
+[Unit]
+Description=PG-MGMT local asyncronus worker.
+After=mysqld.service
+
+[Service]
+Type=notify
+EnvironmentFile=/home/worker/worker.env
+User=worker
+Group=worker
+ExecStart=/usr/bin/python3 /home/worker/local_worker_async.py
+TimeoutStartSec=30
+StandardOutput=append:/var/log/pgmgmt/worker.log
+StandardError=append:/var/log/pgmgmt/worker.log
+
+[Install]
+WantedBy=multi-user.target

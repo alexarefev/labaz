@@ -49,3 +49,22 @@
     role_attr_flags: CREATEDB,CREATEROLE
   become: yes
   become_user: postgres
+- name: Save query into variable (PG Debian)
+  set_fact:
+    create_query: "{{ lookup('file', 'files/sql/pg.sql') }}"
+- name: Create table (PG Debian)
+  postgresql_query: 
+    db: postgres
+    query: "{{ create_query }}"
+  become: yes
+  become_user: postgres
+- name: Change privileges in public (PG Debian)
+  postgresql_privs:
+    db: postgres
+    schema: public
+    privs: ALL
+    type: table
+    objs: mgmt_task 
+    role: "{{ pg.user }}"
+  become: yes
+  become_user: postgres

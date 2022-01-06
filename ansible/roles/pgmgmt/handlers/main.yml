@@ -35,3 +35,23 @@
     name: nginx
     state: reloaded
     enabled: yes
+- name: start remote-worker
+  systemd:
+    name: remote-worker 
+    state: started
+    enabled: yes
+- name: start local-worker
+  systemd:
+    name: local-worker 
+    state: started
+    enabled: yes
+- name: start local-worker-async
+  systemd:
+    name: local-worker-async 
+    state: started
+    enabled: yes
+- name: start api
+  systemd:
+    name: api-pg-mgmt 
+    state: started
+    enabled: yes

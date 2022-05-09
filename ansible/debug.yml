@@ -1,0 +1,12 @@
+---
+- hosts: db
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Show IP
+      debug:
+        msg: "{{ ip }}"
+      with_inventory_hostnames:
+        - "db"
+      run_once: true
+

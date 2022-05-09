@@ -5,20 +5,25 @@ all:
         pg:
           hosts:
             pg1:
+              ip: 192.168.1.151
             pg2:
+              ip: 192.168.1.152
           vars:
             type: pg
             ansible_python_interpreter: /usr/bin/python3
         mysql:
           hosts:
             mysql1:
+              ip: 192.168.1.153
             mysql2:
+              ip: 192.168.1.154
           vars:
             type: mysql
             ansible_python_interpreter: /usr/bin/python3
         pgm:
           hosts:
             pg-mgmt:
+              ip: 192.168.1.150
           vars:
             type: mgmt
             ansible_python_interpreter: /usr/bin/python3

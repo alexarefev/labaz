@@ -1,9 +1,11 @@
 ---
 - hosts: db
   become: true
-  vars_prompt:
-    - name: mgmt_host
-      prompt: "Input management host"
-      private: no
   roles:
-    - pgmgmt
+    - common
+    - mysql
+    - pg
+    - service
+    - mgmt
+    - additions
+

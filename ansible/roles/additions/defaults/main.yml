@@ -1,0 +1,48 @@
+fs: 
+  type: nfs
+mysql:
+  ver: 10.5
+  type: mariadb
+  user: mysql
+  pass: mmmyyy
+  conn: 100
+  conf: |
+    innodb_buffer_pool_size = 1024M
+    innodb_log_file_size = 256M
+    innodb_file_per_table = ON
+    innodb_flush_log_at_trx_commit = 2
+share: /mnt/backups
+log: /var/log/pgmgmt
+pid: /run/pgmgmt
+pgmgmt:
+  user: pgmgmt
+  pass: paaasssworddd
+  db: pgmgmt
+  ver: 13
+  conf: |
+    max_connections = 100
+    shared_buffers = 512MB
+    work_mem = 8MB
+    maintenance_work_mem = 100MB
+    effective_cache_size = 1024MB
+pg:
+  user: worker
+  ver: 13
+  conf: |
+    max_connections = 100
+    shared_buffers = 512MB
+    work_mem = 8MB
+    maintenance_work_mem = 100MB
+    effective_cache_size = 1024MB
+os:
+  user: worker
+  uid: 10001
+api:
+  port: 8080
+  ports:
+    - 8081
+    - 8082
+    - 8083
+    - 8084
+  user: labaz
+  pass: rtydfg456

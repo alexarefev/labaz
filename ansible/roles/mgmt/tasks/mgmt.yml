@@ -9,7 +9,7 @@
     - { name: "postgres", src: "sql/pgmgmt.sql", dst: "pgmgmt.sql" }
     - { name: "{{ os.user }}", src: "api/api.py", dst: "api.py" }
     - { name: "{{ os.user }}", src: "api/api.html", dst: "api.html" }
-- name: Copy files (PG)
+- name: Copy files (Mgmt)
   template:
     src: "{{ item }}.j2"
     dest: "~{{ os.user }}/{{ item }}"

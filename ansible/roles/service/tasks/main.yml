@@ -4,4 +4,4 @@
     uid: "{{ os.uid }}"
     shell: /bin/bash
 - include_tasks: "srv.yml"
-  when: type != mgmt
+  when: type != "mgmt"

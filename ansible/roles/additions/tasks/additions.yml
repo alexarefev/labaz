@@ -10,7 +10,7 @@
   debug:
     msg: "{{ item }}/32" 
   loop: "{{ ip_addrs_pg | json_query('results[*].ansible_facts.ip_addr1') }}"
-  when: type == mgmt
+  when: type == "mgmt"
 - name: Save IP into variable (MySQL)
   set_fact:
     ip_addr2: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
@@ -22,7 +22,7 @@
   debug:
     msg: "{{ item }}/32" 
   loop: "{{ ip_addrs_mysql | json_query('results[*].ansible_facts.ip_addr2') }}"
-  when: type == mgmt
+  when: type == "mgmt"
 - name: Save IP into variable (PG MySQL)
   set_fact:
     ip_addr: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
@@ -34,7 +34,7 @@
   debug:
     msg: "{{ item }}/32" 
   loop: "{{ ip_addrs | json_query('results[*].ansible_facts.ip_addr') }}"
-  when: type == mgmt
+  when: type == "mgmt"
 - name: Change pg_hba.conf (Mgmt)
   postgresql_pg_hba:
     dest: "/etc/postgresql/{{ pgmgmt.ver }}/main/pg_hba.conf"
@@ -47,7 +47,7 @@
   loop: "{{ ip_addrs | json_query('results[*].ansible_facts.ip_addr') }}"
   notify:
     - restart pg
-  when: type == mgmt
+  when: type == "mgmt"
 - name: Set query string (PG, MySQL)
   set_fact:
     ins: "INSERT INTO hosts (host_name, host_type) VALUES ('{{ item }}', '{{ hostvars[item][\"type\"] }}') ON CONFLICT DO NOTHING;"
@@ -60,7 +60,7 @@
     db: pgmgmt
     query: "{{ item }}"
   loop: "{{ inserts | json_query('results[*].ansible_facts.ins') }}"
-  when: type == mgmt
+  when: type == "mgmt"
   become: yes
   become_user: postgres
 - name: Create folder for logs

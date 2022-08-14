@@ -1,9 +1,0 @@
-server {
-	    listen       {{ api.port }};
-	    access_log /var/log/nginx/labaz.access.log;
-	    location /api/v1/ {
-			proxy_pass http://backend;
-                        auth_basic "Labaz DBs management";
-                        auth_basic_user_file /etc/nginx/.htpasswd;
-	    }
-	}

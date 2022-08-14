@@ -1,0 +1,57 @@
+---
+- name: restart pg1
+  systemd:
+    name: postgresql
+    state: restarted
+    enabled: yes
+  when: ansible_distribution == "Debian" or ansible_distribution == "Ubuntu"
+  listen: "restart pg" 
+- name: restart pg2
+  systemd:
+    name: "postgresql-{{ pg.ver }}"
+    state: restarted
+    enabled: yes
+  when: ansible_distribution == "CentOS" and ansible_host != mgmt_host  
+  listen: "restart pg" 
+- name: restart pg3
+  systemd:
+    name: "postgresql-{{ pmgmt.ver }}"
+    state: restarted
+    enabled: yes
+  when: ansible_distribution == "CentOS" and ansible_host == mgmt_host  
+  listen: "restart pg" 
+- name: restart pgq
+  systemd:
+    name: pgqd
+    state: restarted
+    enabled: yes
+- name: restart mysql
+  systemd:
+    name: mysqld
+    state: restarted
+    enabled: yes
+- name: reload nginx
+  systemd:
+    name: nginx
+    state: reloaded
+    enabled: yes
+- name: start remote-worker
+  systemd:
+    name: remote-worker 
+    state: started
+    enabled: yes
+- name: start local-worker
+  systemd:
+    name: local-worker 
+    state: started
+    enabled: yes
+- name: start local-worker-async
+  systemd:
+    name: local-worker-async 
+    state: started
+    enabled: yes
+- name: start api
+  systemd:
+    name: api-pg-mgmt 
+    state: started
+    enabled: yes

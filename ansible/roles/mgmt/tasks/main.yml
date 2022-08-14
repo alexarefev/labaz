@@ -4,6 +4,6 @@
     uid: "{{ os.uid }}"
     shell: /bin/bash
 - include_tasks: "{{ ansible_distribution }}_mgmt.yml"
-  when: type == mgmt
+  when: type == "mgmt"
 - include_tasks: "mgmt.yml"
-  when: type == mgmt
+  when: type == "mgmt"

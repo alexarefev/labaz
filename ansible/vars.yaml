@@ -46,3 +46,4 @@ api:
     - 8084
   user: labaz
   pass: rtydfg456
+mgmt_host: pg-mgmt

@@ -25,22 +25,22 @@
   loop:
     - pg
     - mysql
-  when: type == mgmt
+  when: type == "mgmt"
 - name: NFS configuration (Mgmt)
   lineinfile:
     path: /etc/exports 
     line: "{{ share }}/pg    {{ item }}/32(rw,sync,no_subtree_check)" 
   loop: "{{ ip_addrs_pg | json_query('results[*].ansible_facts.ip_addr1') }}"
-  when: type == mgmt and fs.type == "nfs"
+  when: type == "mgmt" and fs.type == "nfs"
 - name: NFS configuration (Mgmt)
   lineinfile:
     path: /etc/exports 
     line: "{{ share }}/mysql    {{ item }}/32(rw,sync,no_subtree_check)" 
   loop: "{{ ip_addrs_mysql | json_query('results[*].ansible_facts.ip_addr2') }}"
-  when: type == mgmt and fs.type == "nfs"
+  when: type == "mgmt" and fs.type == "nfs"
 - name: NFS export directories
   shell: "exportfs -r"
-  when: type == mgmt and fs.type == "nfs"
+  when: type == "mgmt" and fs.type == "nfs"
 - name: Define the mgmt IP (Mgmt)
   set_fact:
     pg_mgmt_ip: "{{ hostvars[mgmt_host]['ansible_default_ipv4']['address'] }}"
@@ -66,7 +66,7 @@
     name: nfs-server
     state: restarted
     enabled: yes
-  when: type == mgmt and fs.type == "nfs"
+  when: type == "mgmt" and fs.type == "nfs"
 - name: GlusterFS (All)
   block:
     - name: Load kernel module

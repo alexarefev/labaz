@@ -1,7 +1,7 @@
 fs: 
   type: nfs
 mysql:
-  ver: 10.5
+  ver: 10.10
   type: mariadb
   user: mysql
   pass: mmmyyy
@@ -18,7 +18,7 @@ pgmgmt:
   user: pgmgmt
   pass: paaasssworddd
   db: pgmgmt
-  ver: 13
+  ver: 14
   conf: |
     max_connections = 100
     shared_buffers = 512MB
@@ -27,7 +27,7 @@ pgmgmt:
     effective_cache_size = 1024MB
 pg:
   user: worker
-  ver: 13
+  ver: 14
   conf: |
     max_connections = 100
     shared_buffers = 512MB

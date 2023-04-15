@@ -18,28 +18,27 @@ def create_entity(local_db, remote_db, logger):
         local_connection.commit()
         if tasks:
             for task in tasks:
-                sql = "CREATE DATABASE {};".format(task[0])
+                sql = f"CREATE DATABASE {task[0]};"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("{} database has been created".format(task[0]))
-                sql = "CREATE USER '{}'@'%' IDENTIFIED BY '{}';".format(
-                       task[2], task[3])
+                logger.debug(f"{task[0]} database has been created")
+                sql = f"CREATE USER '{task[2]}'@'%' IDENTIFIED BY '{task[3]}';"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("{} user has been created".format(task[2]))
-                sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(task[0], task[2])
+                logger.debug(f"{task[2]} user has been created")
+                sql = f"GRANT ALL ON {task[0]}.* TO '{task[2]}'@'%';"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("Access to {} database has been granted".format(task[0]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(task[0], 'create', QUEUE_NAME)
+                logger.debug(f"Access to {task[0]} database has been granted")
+                sql = f"SELECT * FROM public.dback('{task[0]}', 'create', '{QUEUE_NAME}');"
                 logger.debug(sql)
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(task[0], result[1]))
-                sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=1".format(task[0])
+                logger.debug(f"{task[0]} {result[1]}")
+                sql = f"DELETE FROM mysql.mgmt_task WHERE db_name='{task[0]}' AND db_task=1;"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()
@@ -57,22 +56,22 @@ def drop_entity(local_db, remote_db, logger):
         local_connection.commit()
         if tasks:
             for task in tasks:
-                sql = "DROP USER '{}'@'%';".format(task[2])
+                sql = f"DROP USER '{task[2]}'@'%';"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("{} user has been dropped".format(task[2]))
-                sql = "DROP DATABASE {};".format(task[0])
+                logger.debug(f"{task[2]} user has been dropped")
+                sql = f"DROP DATABASE {task[0]};"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("{} database has been dropped".format(task[0]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(task[0], 'delete', QUEUE_NAME)
+                logger.debug(f"{task[0]} database has been dropped")
+                sql = f"SELECT * FROM public.dback('{task[0]}', 'delete', '{QUEUE_NAME}');"
                 logger.debug(sql)
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(task[0], result[1]))
-                sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=2".format(task[0])
+                logger.debug(f"{task[0]} {result[1]}")
+                sql = f"DELETE FROM mysql.mgmt_task WHERE db_name='{task[0]}' AND db_task=2;"
                 logger.debug(sql)
                 local_db.execute(sql)
                 local_connection.commit()

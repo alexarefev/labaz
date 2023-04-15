@@ -17,20 +17,20 @@ def create_entity(local_db, remote_db, logger):
         if tasks:
             for task in tasks:
                 logger.debug(task)
-                sql = 'CREATE DATABASE "{}";'.format(task[0])
+                sql = f'CREATE DATABASE "{task[0]}";'
                 local_db.execute(sql)
-                logger.debug("{} database has been created".format(task[0]))
-                sql = ('''CREATE ROLE "{}" WITH LOGIN PASSWORD '{}';'''.format(task[2], task[4]))
+                logger.debug(f"{task[0]} database has been created")
+                sql = ('''CREATE ROLE "{task[2]}" WITH LOGIN PASSWORD '{task[4]}';''')
                 local_db.execute(sql)
-                logger.debug("{} role has been created".format(task[2]))
-                sql = 'GRANT ALL ON DATABASE "{}" TO "{}"'.format(task[0], task[2])
+                logger.debug(f"{task[2]} role has been created")
+                sql = f'GRANT ALL ON DATABASE "{task[0]}" TO "{task[2]}"'
                 local_db.execute(sql)
-                logger.debug("Access to {} database has been granted".format(task[0]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(task[0], 'create', QUEUE_NAME)
+                logger.debug(f"Access to {task[0]} database has been granted")
+                sql = f"SELECT * FROM public.dback('{task[0]}', 'create', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(task[0], result[1]))
-                sql = "DELETE FROM mgmt_task WHERE db_name='{}' AND db_task=1".format(task[0])
+                logger.debug(f"{task[0]} {result[1]}")
+                sql = f"DELETE FROM mgmt_task WHERE db_name='{task[0]}' AND db_task=1"
                 local_db.execute(sql)
     except Exception as err:
         logger.critical(str(err))
@@ -40,29 +40,29 @@ def drop_entity(local_db, remote_db, logger):
     Drop database and role
     '''
     try:
-        sql = 'SELECT * FROM mgmt_task WHERE db_task=2;'
+        sql = f'SELECT * FROM mgmt_task WHERE db_task=2;'
         local_db.execute(sql)
         tasks = local_db.fetchall()
         if tasks:
             for task in tasks:
                 logger.debug(task)
-                sql = 'ALTER DATABASE "{}" ALLOW_CONNECTIONS=false;'.format(task[0])
+                sql = f'ALTER DATABASE "{task[0]}" ALLOW_CONNECTIONS=false;'
                 local_db.execute(sql)
-                logger.debug("Connections to {} database have been forbidden".format(task[0]))
-                sql = ("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{}';".format(task[0]))
+                logger.debug(f"Connections to {task[0]} database have been forbidden")
+                sql = ("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{task[0]}';")
                 local_db.execute(sql)
-                logger.debug("Connections to {} have been dropped".format(task[0]))
-                sql = "DROP DATABASE {};".format(task[0])
+                logger.debug(f"Connections to {task[0]} have been dropped")
+                sql = f"DROP DATABASE {task[0]};"
                 local_db.execute(sql)
-                logger.debug("{} database has been dropped".format(task[0]))
-                sql = 'DROP ROLE "{}";'.format(task[2])
+                logger.debug(f"{task[0]} database has been dropped")
+                sql = f'DROP ROLE "{task[2]}";')
                 local_db.execute(sql)
-                logger.debug("{} role has been dropped".format(task[2]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(task[0], 'delete', QUEUE_NAME)
+                logger.debug(f"{task[2]} role has been dropped")
+                sql = f"SELECT * FROM public.dback('{task[0]}', 'delete', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(task[0], result[1]))
-                sql = "DELETE FROM mgmt_task WHERE db_name='{}' AND db_task=2".format(task[0])
+                logger.debug(f"{task[0]} {result[1]}")
+                sql = f"DELETE FROM mgmt_task WHERE db_name='{task[0]}' AND db_task=2"
                 local_db.execute(sql)
     except Exception as err:
         logger.critical(str(err))
@@ -86,26 +86,25 @@ if __name__ == "__main__":
     logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
     logger = logging.getLogger(WORKER_NAME)
 
-    logger.info("Host name is {}".format(UNAME))
-    logger.info("Backup directory is {}".format(BACKUP_DIR))
+    logger.info(f"Host name is {UNAME}")
+    logger.info(f"Backup directory is {BACKUP_DIR}")
 
     QUEUE_NAME = "pg"
     PREF = "worker"
 
 
     try:
-        remote_connection_string = ("host='{}' dbname='{}' user='{}' password='{}' port=5432".format(
-                                     REMOTE_DB_HOST, REMOTE_DB_NAME, REMOTE_DB_USER, REMOTE_DB_PASSWORD))
+        remote_connection_string = (f"host='{REMOTE_DB_HOST}' dbname='{REMOTE_DB_NAME}' user='{REMOTE_DB_USER}' password='{REMOTE_DB_PASSWORD}' port=5432")
         logger.debug(remote_connection_string)
         remote_connection = psycopg2.connect(remote_connection_string)
         remote_db = remote_connection.cursor()
         remote_connection.autocommit = True
-        logger.info("PostgreSQL Management has been connected")
-        local_connection_string = ("dbname='{}' user='{}'".format(LOCAL_DB_NAME, LOCAL_DB_USER))
+        logger.info(f"PostgreSQL Management has been connected")
+        local_connection_string = (f"dbname='{LOCAL_DB_NAME}' user='{LOCAL_DB_USER}'")
         local_connection = psycopg2.connect(local_connection_string)
         local_db = local_connection.cursor()
         local_connection.autocommit = True
-        logger.info("PostgreSQL local has been connected")
+        logger.info(f"PostgreSQL local has been connected")
         
         sysd.notify(sysd.Notification.READY)
 

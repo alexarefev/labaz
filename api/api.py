@@ -32,7 +32,7 @@ def run_api(port_number):
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
                     data = request.json
-                    logger.debug("JSON: {}".format(data))
+                    logger.debug(f"JSON: {data}")
                     host_name = ''
                     db_name = ''
                     user_name = ''
@@ -43,24 +43,24 @@ def run_api(port_number):
                             db_name = input_validation(data['name'], 50)
                         if 'user' in data:
                             user_name = input_validation(data['user'], 50)
-                    sql = "SELECT * FROM dbcreation('{}', '{}', '{}', '{}');".format(db_name, user_name, host_name, entity_type)
+                    sql = "SELECT * FROM dbcreation('{db_name}' '{user_name}' '{host_name}' '{entity_type}'")
                     logger.debug(sql)
                     result = run_sql(sql)
                     if result[0] == '0':
                         response.status = 201
                         json_data = { "Result": "success", "type": entity_type, "host": result[1], "name": result[2], "user": result[3], "password": result[4] }
-                        logger.info("JSON: {}".format(json_data))
+                        logger.info(f"JSON: {json_data}")
                         return json_data
                     else:
                         json_data = { "Result": "fail", "message": result[1] }
-                        logger.warning("JSON: {}".format(json_data))
+                        logger.warning("JSON: {json_data}")
                         response.status = 404
                         return json_data                    
                 else:
                     pass
         
             json_data = { "Result": "fail", "message": "Error in request" }
-            logger.warning("JSON: {}".format(json_data))
+            logger.warning("JSON: {json_data}")
             response.status = 404
             return json_data
     
@@ -73,7 +73,7 @@ def run_api(port_number):
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
                     data = request.json
-                    logger.debug("JSON: {}".format(data))
+                    logger.debug(f"JSON: {data}")
                     backup_file = ''
                     db_secret = ''
                     db_name = input_validation(entity, 50)
@@ -81,27 +81,27 @@ def run_api(port_number):
                         if ('file' in data) and ('pass' in data):
                             backup_file = input_validation(data['file'], 50)
                             db_secret = input_validation(data['pass'], 50)
-                            is_backup = os.path.exists("{}/{}/{}".format(BACKUP_DIR, entity_type, backup_file))
-                            logger.debug("Backup_path: {}, exists: {}".format(backup_file, is_backup))
+                            is_backup = os.path.exists("{BACKUP_DIR}/{entity_type}/{backup_file}")
+                            logger.debug(f"Backup_path: {backup_file}, exists: {is_backup}")
                             if is_backup:
-                                sql = "SELECT * FROM dbrecover('{}', '{}', '{}', '{}');".format(db_name, backup_file, db_secret, entity_type)
+                                sql = "SELECT * FROM dbrecover('{db_name}', '{backup_file}', '{db_secret}', '{entity_type}');"
                                 logger.debug(sql)
                                 result = run_sql(sql)
                                 if result[0] == '0':
                                     response.status = 201
                                     json_data = { "Result": "success", "type": entity_type }
-                                    logger.info("JSON: {}".format(json_data))
+                                    logger.info(f"JSON: {json_data}")
                                     return json_data
                                 else:
                                     json_data = { "Result": "fail", "message": result[1] }
-                                    logger.warning("JSON: {}".format(json_data))
+                                    logger.warning("JSON: {json_data}")
                                     response.status = 404
                                     return json_data                    
                 else:
                     pass
         
             json_data = { "Result": "fail", "message": "Error in request" }
-            logger.warning("JSON: {}".format(json_data))
+            logger.warning("JSON: {json_data}")
             response.status = 404
             return json_data
     
@@ -126,24 +126,24 @@ def run_api(port_number):
                         else:
                             db_backup = 'false'
                     if db_name:
-                        sql = "SELECT * FROM dbdeletion('{}', '{}', '{}', '{}');".format(db_name, db_backup, db_secret, entity_type)
+                        sql = "SELECT * FROM dbdeletion('{db_name}', '{db_backup}', '{db_secret}', '{entity_type}');"
                         logger.debug(sql)
                         result = run_sql(sql)
                         if result[0] == '0':
                             response.status = 204
                             json_data = { "Result": "success", "type": entity_type }
-                            logger.info("JSON: {}".format(json_data))
+                            logger.info(f"JSON: {json_data}")
                             return json_data
                         else:
                             json_data = { "Result": "fail", "message": result[1] }
-                            logger.warning("JSON: {}".format(json_data))
+                            logger.warning("JSON: {json_data}")
                             response.status = 404
                             return json_data                    
                 else:
                     pass
         
             json_data = { "Result": "fail", "message": "Error in request" }
-            logger.warning("JSON: {}".format(json_data))
+            logger.warning("JSON: {json_data}")
             response.status = 404
             return json_data
     
@@ -156,12 +156,12 @@ def run_api(port_number):
             response.add_header("Allow", "GET, POST, DELETE, PATCH")
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    sql = "SELECT * FROM dblist('{}');".format(valid_type)
+                    sql = "SELECT * FROM dblist('{valid_type}');"
                     logger.debug(sql)
                     result = run_sql(sql)
                     if results:
                         json_data = { "Result": "success", "type": entity_type }
-                        logger.info("JSON: {}".format(json_data))
+                        logger.info(f"JSON: {json_data}")
                         json_list =[]
                         for result in results:
                             json_str = { "host": result[2], "name": result[0], "user": result[1] }
@@ -181,12 +181,12 @@ def run_api(port_number):
         try:
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    sql = "SELECT * FROM hostlist('{}');".format(valid_type)
+                    sql = "SELECT * FROM hostlist('{valid_type}');"
                     logger.debug(sql)
                     result = run_sql(sql)
                     if results:
                         json_data = { "Result": "success", "type": entity_type }
-                        logger.info("JSON: {}".format(json_data))
+                        logger.info(f"JSON: {json_data}")
                         json_list =[]
                         for result in results:
                             json_str = { "host": result[0], "active": result[1], "last_ack": str(result[2]) }
@@ -206,10 +206,10 @@ def run_api(port_number):
         try:
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    backup_dir = "{}/{}".format(BACKUP_DIR, entity_type)
-                    is_backup = os.path.exists("{}/{}".format(backup_dir, entity))
+                    backup_dir = "{BACKUP_DIR}/{entity_type}"
+                    is_backup = os.path.exists("{backup_dir}/{entity}")
                     if is_backup:
-                        logger.debug("Backup {} has been sent".format(entity))
+                        logger.debug(f"Backup {entity} has been sent")
                         response.status = 200
                         return static_file(entity, root=backup_dir, download=entity)
     
@@ -223,12 +223,12 @@ def run_api(port_number):
         try:
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    backup_path = "{}/{}/{}".format(BACKUP_DIR, entity_type, entity)
+                    backup_path = "{BACKUP_DIR}/{entity_type}/{entity}"
                     is_backup = os.path.exists(backup_path)
                     if not is_backup:
                         backup = FileUpload(request.body, None, filename='')
                         backup.save(backup_path)
-                        logger.debug("Backup {} has been recived".format(entity))
+                        logger.debug(f"Backup {entity} has been recived")
                         response.status = 200
                         return "" 
     
@@ -263,7 +263,7 @@ def run_api(port_number):
         local_db = local_connection.cursor()
         local_connection.autocommit = True
 
-        logger.info("API process on port {}: has been connected to PostgreSQL Management".format(port_number))
+        logger.info(f"API process on port {port_number}: has been connected to PostgreSQL Management")
         run(app, host='127.0.0.1', port=port_number, quiet=True)
         return 0
 
@@ -291,8 +291,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
     logger = logging.getLogger(WORKER_NAME)
     
-    logger.info("MY NAME IS {}".format(UNAME))
-    logger.info("BACKUP_DIR IS {}".format(BACKUP_DIR))
+    logger.info(f"MY NAME IS {UNAME}")
+    logger.info(f"BACKUP_DIR IS {BACKUP_DIR}")
     
     try:
 

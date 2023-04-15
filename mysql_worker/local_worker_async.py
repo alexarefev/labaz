@@ -14,55 +14,54 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             '''
             Perform a backup
             '''
-            logger.debug("Backup DB: {}".format(tsk[0]))
-            sql = "UPDATE mysql.mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
+            logger.debug(f"Backup DB: {tsk[0]}")
+            sql = "UPDATE mysql.mgmt_task SET db_task=5 WHERE db_name='{tsk[0]}' AND db_task=3"
             local_db.execute(sql)
             local_connection.commit()
-            backup_command = "mysqldump -u{} -p'{}' {} | gzip -c -q > {}/{}_{}.gz".format(
-                              LOCAL_DB_USER, LOCAL_DB_PASSWORD, tsk[0], BACKUP_DIR, UNAME, tsk[0])
+            backup_command = f"mysqldump -u{LOCAL_DB_USER} -p'{LOCAL_DB_PASSWORD}' {tsk[0]} | gzip -c -q > {BACKUP_DIR}/{UNAME}_{tsk[0])}.gz"
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
             result = proc.returncode
-            logger.debug("{} has been backuped into {} with result {}".format(tsk[0], BACKUP_DIR, result))
+            logger.debug(f"{tsk[0]} has been backuped into {BACKUP_DIR}  with result {result}"
             if result == 0:
-                sql = "DROP USER '{}'@'%';".format(tsk[2])
+                sql = "DROP USER '{tsk[2]}'@'%';"
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("{} user has been dropped".format(tsk[2]))
-                sql = "DROP DATABASE {};".format(tsk[0])
+                logger.debug(f"{tsk[2]} user has been dropped"
+                sql = "DROP DATABASE {tsk[0]};"
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("{} database has been dropped".format(tsk[0]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'delete', QUEUE_NAME)
+                logger.debug(f"{tsk[0]} database has been dropped"
+                sql = "SELECT * FROM public.dback('{tsk[0]}', 'delete', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(tsk[0], result[1]))
-                sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=5".format(tsk[0])
+                logger.debug(f"{tsk[0]} {result[1]}")
+                sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{tsk[0]}' AND db_task=5"
                 local_db.execute(sql)
                 local_connection.commit()
         elif tsk[1] == 4:
             '''
             Recover from a backup
             '''
-            logger.debug("Recovery DB: {}".format(tsk[0]))
-            sql = "UPDATE mysql.mgmt_task SET db_task=6 WHERE db_name='{}' AND db_task=4".format(tsk[0])
+            logger.debug(f"Recovery DB: {tsk[0]}")
+            sql = "UPDATE mysql.mgmt_task SET db_task=6 WHERE db_name='{tsk[0]}' AND db_task=4"
             local_db.execute(sql)
             local_connection.commit()
-            recovery_command = "gunzip < {}/{} | mysql {} -u{} -p'{}'".format(BACKUP_DIR, tsk[4], tsk[0], LOCAL_DB_USER, LOCAL_DB_PASSWORD)
+            recovery_command = "gunzip < {BACKUP_DIR}/{tsk[4]} | mysql {tsk[0]} -u{LOCAL_DB_USER} -p'{LOCAL_DB_PASSWORD}'"
             proc = await asyncio.create_subprocess_shell(recovery_command)
             await proc.wait()
             result = proc.returncode
-            logger.debug("{} has been recovered with result {}".format(tsk[0], result))
+            logger.debug(f"{tsk[0]} has been recovered with result {result}")
             if result == 0:
-                sql = "GRANT ALL ON {}.* TO '{}'@'%';".format(tsk[0], tsk[2])
+                sql = "GRANT ALL ON {tsk[0]}.* TO '{tsk[2]}'@'%';"
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug("Access to {} database has been granted".format(tsk[2]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'create', QUEUE_NAME)
+                logger.debug(f"Access to {tsk[2]} database has been granted"
+                sql = "SELECT * FROM public.dback('{tsk[0]}', 'create', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(tsk[0], result[1]))
-                sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{}' AND db_task=6".format(tsk[0])
+                logger.debug(f"{tsk[0]} {result[1]}")
+                sql = "DELETE FROM mysql.mgmt_task WHERE db_name='{tsk[0]}' AND db_task=6"
                 local_db.execute(sql)
                 local_connection.commit()
     except Exception as err:
@@ -115,7 +114,7 @@ if __name__ == "__main__":
             tasks = local_db.fetchall()
             local_connection.commit()
             if tasks:
-                logger.debug("Task: {}".format(tasks))
+                logger.debug(f"Task: {tasks}")
                 coroutines = asyncio.gather(*[proc_entity(task, local_db, remote_db, logger) for task in tasks])
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(coroutines)

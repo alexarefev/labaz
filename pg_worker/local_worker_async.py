@@ -13,55 +13,54 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             '''
             Perform a backup
             '''
-            logger.debug("Backup DB: {}".format(tsk[0]))
-            sql = "UPDATE mgmt_task SET db_task=5 WHERE db_name='{}' AND db_task=3".format(tsk[0])
+            logger.debug(f"Backup DB: {tsk[0]}")
+            sql = f"UPDATE mgmt_task SET db_task=5 WHERE db_name='{tsk[0]}' AND db_task=3"
             local_db.execute(sql)
-            backup_command = ("pg_dump -d {} | gzip -c > {}/{}_{}.gz".format(
-                               tsk[0], BACKUP_DIR, UNAME, tsk[0]))
+            backup_command = ("pg_dump -d {tsk[0]} | gzip -c > {BACKUP_DIR}/{UNAME}_{tsk[0]}.gz")
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
             result = proc.returncode
-            logger.debug("{} has been backuped into {} with result {}".format(tsk[0], BACKUP_DIR, result))
+            logger.debug(f"{tsk[0]} has been backuped into {BACKUP_DIR} with result {result}")
             if result == 0:
-                sql = 'ALTER DATABASE "{}" ALLOW_CONNECTIONS=false;'.format(tsk[0])
+                sql = f'ALTER DATABASE "{tsk[0]}" ALLOW_CONNECTIONS=false;'
                 local_db.execute(sql)
-                logger.debug("Connections to {} database have been forbidden".format(tsk[0]))
-                sql = ("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{}';".format(tsk[0]))
+                logger.debug(f"Connections to {tsk[0]} database have been forbidden")
+                sql = (f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{tsk[0]}';")
                 local_db.execute(sql)
-                logger.debug("Connections to {} have been dropped".format(tsk[0]))
-                sql = "DROP DATABASE {};".format(tsk[0])
+                logger.debug(f"Connections to {tsk[0]} have been dropped")
+                sql = f"DROP DATABASE {tsk[0]};"
                 local_db.execute(sql)
-                logger.debug("{} database has been dropped".format(tsk[0]))
-                sql = 'DROP ROLE "{}";'.format(tsk[2])
+                logger.debug(f"{tsk[0]} database has been dropped")
+                sql = f'DROP ROLE "{tsk[2]}";'
                 local_db.execute(sql)
-                logger.debug("{} role has been dropped".format(tsk[2]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'delete', QUEUE_NAME)
+                logger.debug(f"{tsk[2]} role has been dropped")
+                sql = f"SELECT * FROM public.dback('{tsk[0]}', 'delete', '{QUEUE_NAME}');"
                 remote_db.execute(sql)                
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(tsk[0], result[1]))
-                sql = "DELETE FROM mgmt_task WHERE db_name='{}' AND db_task=5".format(tsk[0])
+                logger.debug(f"{tsk[0]} {result[1]}")
+                sql = f"DELETE FROM mgmt_task WHERE db_name='{tsk[0]}' AND db_task=5"
                 local_db.execute(sql)
         elif tsk[1] == 4:
             '''
             Recover from a backup
             '''
-            logger.debug("Recovery DB: {}".format(tsk[0])) 
-            sql = "UPDATE mgmt_task SET db_task=6 WHERE db_name='{}' AND db_task=4".format(tsk[0])
+            logger.debug(f"Recovery DB: {tsk[0]}") 
+            sql = f"UPDATE mgmt_task SET db_task=6 WHERE db_name='{tsk[0]}' AND db_task=4"
             local_db.execute(sql)
-            recovery_command = ("gunzip < {}/{} | psql {}".format(BACKUP_DIR, tsk[3], tsk[0]))
+            recovery_command = (f"gunzip < {BACKUP_DIR}/{tsk[3]} | psql {tsk[0]}")
             proc = await asyncio.create_subprocess_shell(recovery_command)
             await proc.wait()
             result = proc.returncode
-            logger.debug("{} has been recovered with result {}".format(tsk[0], result))
+            logger.debug(f"{tsk[0]} has been recovered with result {result}")
             if result == 0:
-                sql = 'GRANT ALL ON DATABASE "{}" TO "{}"'.format(tsk[0], tsk[2])
+                sql = f'GRANT ALL ON DATABASE "{tsk[0]}" TO "{tsk[2]}"'
                 local_db.execute(sql)
-                logger.debug("Access to {} database has been granted".format(tsk[0]))
-                sql = "SELECT * FROM public.dback('{}', '{}', '{}');".format(tsk[0], 'create', QUEUE_NAME)
+                logger.debug(f"Access to {tsk[0]} database has been granted")
+                sql = f"SELECT * FROM public.dback('{tsk[0]}', 'create', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
-                logger.debug("{} {}".format(tsk[0], result[1]))
-                sql = "DELETE FROM mgmt_task WHERE db_name='{}' AND db_task=6".format(tsk[0])
+                logger.debug(f"{tsk[0]} {result[1]}")
+                sql = f"DELETE FROM mgmt_task WHERE db_name='{tsk[0]}' AND db_task=6"
                 local_db.execute(sql)
     except Exception as err:
         logger.critical(str(err))
@@ -86,35 +85,34 @@ if __name__ == "__main__":
     logging.basicConfig(level=LOG_LEVEL, format=LOGGER_FORMAT)
     logger = logging.getLogger(WORKER_NAME)
 
-    logger.info("Host name is {}".format(UNAME))
-    logger.info("Backup directory is {}".format(BACKUP_DIR))
+    logger.info(f"Host name is {UNAME}")
+    logger.info(f"Backup directory is {BACKUP_DIR}")
 
     QUEUE_NAME = "pg"
     PREF = "worker"
 
 
     try:
-        remote_connection_string = ("host='{}' dbname='{}' user='{}' password='{}' port=5432".format(
-                                     REMOTE_DB_HOST, REMOTE_DB_NAME, REMOTE_DB_USER, REMOTE_DB_PASSWORD))
+        remote_connection_string = ("host='{REMOTE_DB_HOST}' dbname='{REMOTE_DB_NAME}' user='{REMOTE_DB_USER}' password='{REMOTE_DB_PASSWORD}' port=5432")
         logger.debug(remote_connection_string)
         remote_connection = psycopg2.connect(remote_connection_string)
         remote_db = remote_connection.cursor()
         remote_connection.autocommit = True
-        logger.info("PostgreSQL Management has been connected")
-        local_connection_string = ("dbname='{}' user='{}'".format(LOCAL_DB_NAME, LOCAL_DB_USER))
+        logger.info(f"PostgreSQL Management has been connected")
+        local_connection_string = ("dbname='{LOCAL_DB_NAME}' user='{LOCAL_DB_USER}'")
         local_connection = psycopg2.connect(local_connection_string)
         local_db = local_connection.cursor()
         local_connection.autocommit = True
-        logger.info("PostgreSQL local has been connected")
+        logger.info(f"PostgreSQL local has been connected")
 
         sysd.notify(sysd.Notification.READY)
 
         while True:
-            sql = 'SELECT * FROM mgmt_task WHERE db_task=3 OR db_task=4;'
+            sql = f'SELECT * FROM mgmt_task WHERE db_task=3 OR db_task=4;'
             local_db.execute(sql)
             tasks = local_db.fetchall()
             if tasks:
-                logger.debug("Task: {}".format(tasks))
+                logger.debug(f"Task: {tasks}")
                 coroutines = asyncio.gather(*[proc_entity(task, local_db, remote_db, logger) for task in tasks])
                 loop = asyncio.get_event_loop()
                 loop.run_until_complete(coroutines)

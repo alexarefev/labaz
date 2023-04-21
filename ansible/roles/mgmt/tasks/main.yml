@@ -1,0 +1,9 @@
+- name: Add the user for worker (PG, MySQL)
+  user:
+    name: "{{ os.user }}"
+    uid: "{{ os.uid }}"
+    shell: /bin/bash
+- include_tasks: "{{ ansible_distribution }}_mgmt.yml"
+  when: type == "mgmt"
+- include_tasks: "mgmt.yml"
+  when: type == "mgmt"

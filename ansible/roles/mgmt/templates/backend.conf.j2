@@ -1,0 +1,5 @@
+upstream backend {
+		{% for line in api.ports %}
+		server 127.0.0.1:{{ line -}};
+		{% endfor -%}
+	}

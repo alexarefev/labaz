@@ -38,7 +38,7 @@ def queue_reading(remote_db, logger, *args):
                 remote_db.execute(sql)
                 batch = remote_db.fetchall()
                 for i in range(0, len(batch)):
-                    logger.debug(f"server: {batch[i][8]}, database: {batch[i][5]}, user: {batch[i][6]}, action: {batch[i][4]}, addition: {batch[i][7]}"
+                    logger.debug(f"server: {batch[i][8]}, database: {batch[i][5]}, user: {batch[i][6]}, action: {batch[i][4]}, addition: {batch[i][7]}")
                 sql = f"SELECT * FROM pgq.finish_batch({batch_set[0]});"
                 remote_db.execute(sql)
                 result = remote_db.fetchall()

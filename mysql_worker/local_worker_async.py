@@ -22,16 +22,16 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
             result = proc.returncode
-            logger.debug(f"{tsk[0]} has been backuped into {BACKUP_DIR}  with result {result}"
+            logger.debug(f"{tsk[0]} has been backuped into {BACKUP_DIR}  with result {result}")
             if result == 0:
                 sql = "DROP USER '{tsk[2]}'@'%';"
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug(f"{tsk[2]} user has been dropped"
+                logger.debug(f"{tsk[2]} user has been dropped")
                 sql = "DROP DATABASE {tsk[0]};"
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug(f"{tsk[0]} database has been dropped"
+                logger.debug(f"{tsk[0]} database has been dropped")
                 sql = "SELECT * FROM public.dback('{tsk[0]}', 'delete', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')
@@ -56,7 +56,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
                 sql = "GRANT ALL ON {tsk[0]}.* TO '{tsk[2]}'@'%';"
                 local_db.execute(sql)
                 local_connection.commit()
-                logger.debug(f"Access to {tsk[2]} database has been granted"
+                logger.debug(f"Access to {tsk[2]} database has been granted")
                 sql = "SELECT * FROM public.dback('{tsk[0]}', 'create', '{QUEUE_NAME}');"
                 remote_db.execute(sql)
                 result = remote_db.fetchone()[0].split(',')

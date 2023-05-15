@@ -12,7 +12,7 @@ def worker_registration(remote_db, logger, *args):
     Register the worker as a consumer in the particular queue
     '''
     try:
-        consumer_name = "{args[1]}_{args[2]}"
+        consumer_name = f"{args[1]}_{args[2]}"
         sql = f"SELECT * FROM pgq.register_consumer('{args[0]}', '{consumer_name}');"
         logger.debug(f"Customer registration string: {sql}")
         remote_db.execute(sql)
@@ -27,7 +27,7 @@ def queue_reading(remote_db, logger, *args):
     '''
     result_list = []
     try:
-        consumer_name = "{args[1]}_{args[2]}"
+        consumer_name = f"{args[1]}_{args[2]}"
         while len(result_list) == 0:
             sql = f"SELECT * FROM pgq.next_batch('{args[0]}', '{consumer_name}');"
             remote_db.execute(sql)

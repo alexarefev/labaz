@@ -20,7 +20,7 @@ def create_entity(local_db, remote_db, logger):
                 sql = f'CREATE DATABASE "{task[0]}";'
                 local_db.execute(sql)
                 logger.debug(f"{task[0]} database has been created")
-                sql = ('''CREATE ROLE "{task[2]}" WITH LOGIN PASSWORD '{task[4]}';''')
+                sql = f'''CREATE ROLE "{task[2]}" WITH LOGIN PASSWORD '{task[4]}';'''
                 local_db.execute(sql)
                 logger.debug(f"{task[2]} role has been created")
                 sql = f'GRANT ALL ON DATABASE "{task[0]}" TO "{task[2]}"'
@@ -49,13 +49,13 @@ def drop_entity(local_db, remote_db, logger):
                 sql = f'ALTER DATABASE "{task[0]}" ALLOW_CONNECTIONS=false;'
                 local_db.execute(sql)
                 logger.debug(f"Connections to {task[0]} database have been forbidden")
-                sql = ("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{task[0]}';")
+                sql = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{task[0]}';"
                 local_db.execute(sql)
                 logger.debug(f"Connections to {task[0]} have been dropped")
                 sql = f"DROP DATABASE {task[0]};"
                 local_db.execute(sql)
                 logger.debug(f"{task[0]} database has been dropped")
-                sql = f'DROP ROLE "{task[2]}";')
+                sql = f'DROP ROLE "{task[2]}";'
                 local_db.execute(sql)
                 logger.debug(f"{task[2]} role has been dropped")
                 sql = f"SELECT * FROM public.dback('{task[0]}', 'delete', '{QUEUE_NAME}');"

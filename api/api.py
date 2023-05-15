@@ -43,7 +43,7 @@ def run_api(port_number):
                             db_name = input_validation(data['name'], 50)
                         if 'user' in data:
                             user_name = input_validation(data['user'], 50)
-                    sql = "SELECT * FROM dbcreation('{db_name}' '{user_name}' '{host_name}' '{entity_type}'")
+                    sql = f"SELECT * FROM dbcreation('{db_name}', '{user_name}', '{host_name}', '{entity_type}')"
                     logger.debug(sql)
                     result = run_sql(sql)
                     if result[0] == '0':
@@ -53,14 +53,14 @@ def run_api(port_number):
                         return json_data
                     else:
                         json_data = { "Result": "fail", "message": result[1] }
-                        logger.warning("JSON: {json_data}")
+                        logger.warning(f"JSON: {json_data}")
                         response.status = 404
                         return json_data                    
                 else:
                     pass
         
             json_data = { "Result": "fail", "message": "Error in request" }
-            logger.warning("JSON: {json_data}")
+            logger.warning(f"JSON: {json_data}")
             response.status = 404
             return json_data
     
@@ -94,14 +94,14 @@ def run_api(port_number):
                                     return json_data
                                 else:
                                     json_data = { "Result": "fail", "message": result[1] }
-                                    logger.warning("JSON: {json_data}")
+                                    logger.warning(f"JSON: {json_data}")
                                     response.status = 404
                                     return json_data                    
                 else:
                     pass
         
             json_data = { "Result": "fail", "message": "Error in request" }
-            logger.warning("JSON: {json_data}")
+            logger.warning(f"JSON: {json_data}")
             response.status = 404
             return json_data
     
@@ -126,7 +126,7 @@ def run_api(port_number):
                         else:
                             db_backup = 'false'
                     if db_name:
-                        sql = "SELECT * FROM dbdeletion('{db_name}', '{db_backup}', '{db_secret}', '{entity_type}');"
+                        sql = f"SELECT * FROM dbdeletion('{db_name}', '{db_backup}', '{db_secret}', '{entity_type}');"
                         logger.debug(sql)
                         result = run_sql(sql)
                         if result[0] == '0':
@@ -136,14 +136,14 @@ def run_api(port_number):
                             return json_data
                         else:
                             json_data = { "Result": "fail", "message": result[1] }
-                            logger.warning("JSON: {json_data}")
+                            logger.warning(f"JSON: {json_data}")
                             response.status = 404
                             return json_data                    
                 else:
                     pass
         
             json_data = { "Result": "fail", "message": "Error in request" }
-            logger.warning("JSON: {json_data}")
+            logger.warning(f"JSON: {json_data}")
             response.status = 404
             return json_data
     
@@ -156,7 +156,7 @@ def run_api(port_number):
             response.add_header("Allow", "GET, POST, DELETE, PATCH")
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    sql = "SELECT * FROM dblist('{valid_type}');"
+                    sql = f"SELECT * FROM dblist('{valid_type}');"
                     logger.debug(sql)
                     result = run_sql(sql)
                     if results:
@@ -181,7 +181,7 @@ def run_api(port_number):
         try:
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    sql = "SELECT * FROM hostlist('{valid_type}');"
+                    sql = f"SELECT * FROM hostlist('{valid_type}');"
                     logger.debug(sql)
                     result = run_sql(sql)
                     if results:
@@ -206,8 +206,8 @@ def run_api(port_number):
         try:
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    backup_dir = "{BACKUP_DIR}/{entity_type}"
-                    is_backup = os.path.exists("{backup_dir}/{entity}")
+                    backup_dir = f"{BACKUP_DIR}/{entity_type}"
+                    is_backup = os.path.exists(f"{backup_dir}/{entity}")
                     if is_backup:
                         logger.debug(f"Backup {entity} has been sent")
                         response.status = 200
@@ -223,7 +223,7 @@ def run_api(port_number):
         try:
             for valid_type in ['pg', 'mysql']:
                 if entity_type == valid_type:
-                    backup_path = "{BACKUP_DIR}/{entity_type}/{entity}"
+                    backup_path = f"{BACKUP_DIR}/{entity_type}/{entity}"
                     is_backup = os.path.exists(backup_path)
                     if not is_backup:
                         backup = FileUpload(request.body, None, filename='')

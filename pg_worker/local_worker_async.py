@@ -16,7 +16,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
             logger.debug(f"Backup DB: {tsk[0]}")
             sql = f"UPDATE mgmt_task SET db_task=5 WHERE db_name='{tsk[0]}' AND db_task=3"
             local_db.execute(sql)
-            backup_command = ("pg_dump -d {tsk[0]} | gzip -c > {BACKUP_DIR}/{UNAME}_{tsk[0]}.gz")
+            backup_command = f"pg_dump -d {tsk[0]} | gzip -c > {BACKUP_DIR}/{UNAME}_{tsk[0]}.gz"
             proc = await asyncio.create_subprocess_shell(backup_command)
             await proc.wait()
             result = proc.returncode
@@ -25,7 +25,7 @@ async def proc_entity(tsk, local_db, remote_db, logger):
                 sql = f'ALTER DATABASE "{tsk[0]}" ALLOW_CONNECTIONS=false;'
                 local_db.execute(sql)
                 logger.debug(f"Connections to {tsk[0]} database have been forbidden")
-                sql = (f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{tsk[0]}';")
+                sql = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{tsk[0]}';"
                 local_db.execute(sql)
                 logger.debug(f"Connections to {tsk[0]} have been dropped")
                 sql = f"DROP DATABASE {tsk[0]};"
@@ -93,13 +93,13 @@ if __name__ == "__main__":
 
 
     try:
-        remote_connection_string = ("host='{REMOTE_DB_HOST}' dbname='{REMOTE_DB_NAME}' user='{REMOTE_DB_USER}' password='{REMOTE_DB_PASSWORD}' port=5432")
+        remote_connection_string = (f"host='{REMOTE_DB_HOST}' dbname='{REMOTE_DB_NAME}' user='{REMOTE_DB_USER}' password='{REMOTE_DB_PASSWORD}' port=5432")
         logger.debug(remote_connection_string)
         remote_connection = psycopg2.connect(remote_connection_string)
         remote_db = remote_connection.cursor()
         remote_connection.autocommit = True
         logger.info(f"PostgreSQL Management has been connected")
-        local_connection_string = ("dbname='{LOCAL_DB_NAME}' user='{LOCAL_DB_USER}'")
+        local_connection_string = (f"dbname='{LOCAL_DB_NAME}' user='{LOCAL_DB_USER}'")
         local_connection = psycopg2.connect(local_connection_string)
         local_db = local_connection.cursor()
         local_connection.autocommit = True

@@ -4,7 +4,7 @@ psql -d pgmgmt -U postgres -c "TRUNCATE databases RESTART IDENTITY;"
 
 #HS=${2:-pg2}
 #TP=${1:-pg}
-HS=${2:-mysql3}
+HS=${2:-mysql2}
 TP=${1:-mysql}
 RESP=./response
 
